@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import "./theme.css";
 import "./globals.css";
 import { profile } from "@/content/resume";
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1115" },
+    { media: "(prefers-color-scheme: dark)", color: "#08090c" },
   ],
 };
 
