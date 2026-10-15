@@ -1,7 +1,8 @@
 # GitHub Actions가 장기 액세스 키 없이 AWS에 배포하기 위한 구성.
 #
 # 1. OIDC 공급자: GitHub이 발급한 토큰을 AWS가 신뢰하도록 등록한다.
-# 2. 배포 역할: main 브랜치 워크플로만 맡을 수 있고, 이 프로젝트가 쓰는 서비스 · 리소스로 권한을 한정한다.
+# 2. 배포 역할: production Environment(main 브랜치만 배포 허용)의 작업만 맡을 수 있고,
+#    이 프로젝트가 쓰는 서비스 · 리소스로 권한을 한정한다. 비용 · 데이터 유출로 이어지는 작업은 명시적으로 거부한다.
 # 3. 권한 상한선(permissions boundary): 배포 역할이 만드는 앱 역할(Lambda 실행 역할 등)이
 #    넘을 수 없는 최대 권한. 배포 역할이 Admin 역할을 만들어 권한을 키우는 것을 막는다.
 #
@@ -41,11 +42,13 @@ data "aws_iam_policy_document" "github_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # 이 저장소의 main 브랜치에서 실행된 워크플로만 허용 (PR · 포크 · 다른 브랜치 불가)
+    # 이 저장소의 production Environment를 쓰는 작업만 허용.
+    # 브랜치(ref:refs/heads/main) 조건만 두면 pull_request_target · workflow_run처럼
+    # PR 코드를 main 컨텍스트로 실행하는 트리거도 통과한다. Environment는 GitHub 설정에서 main 브랜치로만 배포를 허용한다.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/main"]
+      values   = ["repo:${var.github_repository}:environment:${var.github_environment}"]
     }
   }
 }
@@ -103,11 +106,16 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = ["arn:aws:lambda:${local.region}:${local.account_id}:function:${var.project}-*"]
   }
 
-  # HTTP API (API Gateway v2). ARN에 계정 ID가 없어 리전으로 한정한다.
+  # HTTP API (API Gateway v2)만 허용. REST API(/restapis)는 캐시 클러스터처럼 시간당 과금 기능이 있어 제외한다.
+  # API Gateway ARN에는 계정 ID가 없어 리전 · 경로로 한정한다.
   statement {
-    sid       = "ApiGateway"
-    actions   = ["apigateway:*"]
-    resources = ["arn:aws:apigateway:${local.region}::/*"]
+    sid     = "ApiGatewayHttpApi"
+    actions = ["apigateway:*"]
+    resources = [
+      "arn:aws:apigateway:${local.region}::/apis",
+      "arn:aws:apigateway:${local.region}::/apis/*",
+      "arn:aws:apigateway:${local.region}::/tags/*",
+    ]
   }
 
   statement {
@@ -146,18 +154,8 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = ["*"]
   }
 
-  # 비밀값(SSM SecureString)은 콘솔/CLI로 직접 넣고, Terraform은 이름만 참조한다
-  statement {
-    sid       = "SsmRead"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
-    resources = ["arn:aws:ssm:${local.region}:${local.account_id}:parameter/${var.project}/*"]
-  }
-
-  statement {
-    sid       = "SsmDescribe"
-    actions   = ["ssm:DescribeParameters"]
-    resources = ["*"]
-  }
+  # SSM 권한은 주지 않는다. 비밀값(SSM SecureString)은 사람이 CLI로 직접 넣고,
+  # Terraform은 파라미터 이름만 Lambda 환경 변수로 넘긴다. 값은 Lambda가 실행 시 읽는다.
 
   # 앱 역할 생성 · 수정: 반드시 권한 상한선이 붙어 있어야 한다
   statement {
@@ -215,6 +213,61 @@ data "aws_iam_policy_document" "github_deploy" {
     sid       = "ReadBoundary"
     actions   = ["iam:GetPolicy", "iam:GetPolicyVersion"]
     resources = [local.boundary_arn]
+  }
+
+  # ── 명시적 거부: 위의 서비스 단위 허용(lambda:* 등)에 포함되지만 쓰지 않는 위험한 작업 ──
+  # Deny는 Allow보다 우선한다.
+
+  # 상시 과금(프로비저닝된 동시성)과 CloudFront를 우회하는 공개 주소(함수 URL)
+  statement {
+    sid    = "DenyLambdaCostAndPublicUrl"
+    effect = "Deny"
+    actions = [
+      "lambda:PutProvisionedConcurrencyConfig",
+      "lambda:CreateFunctionUrlConfig",
+      "lambda:UpdateFunctionUrlConfig",
+    ]
+    resources = ["*"]
+  }
+
+  # Lambda 호출 권한은 API Gateway에만 줄 수 있다 (다른 계정 · 퍼블릭 호출 권한 부여 금지)
+  statement {
+    sid       = "DenyLambdaInvokeExceptApiGateway"
+    effect    = "Deny"
+    actions   = ["lambda:AddPermission"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringNotEquals"
+      variable = "lambda:Principal"
+      values   = ["apigateway.amazonaws.com"]
+    }
+  }
+
+  # 배포에는 테이블 관리만 필요하다. 데이터 읽기 · 쓰기, 다른 계정 공유, S3 내보내기는 막는다.
+  statement {
+    sid    = "DenyDynamoDBDataAndSharing"
+    effect = "Deny"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:BatchGetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:BatchWriteItem",
+      "dynamodb:ConditionCheckItem",
+      "dynamodb:PartiQLSelect",
+      "dynamodb:PartiQLInsert",
+      "dynamodb:PartiQLUpdate",
+      "dynamodb:PartiQLDelete",
+      "dynamodb:GetRecords",
+      "dynamodb:GetShardIterator",
+      "dynamodb:PutResourcePolicy",
+      "dynamodb:ExportTableToPointInTime",
+    ]
+    resources = ["*"]
   }
 }
 

@@ -43,3 +43,9 @@ variable "monthly_budget_usd" {
   type        = number
   default     = 5
 }
+
+variable "github_environment" {
+  description = "배포 역할을 맡을 수 있는 GitHub Environment 이름 (Environment 설정에서 main 브랜치만 배포 허용)"
+  type        = string
+  default     = "production"
+}

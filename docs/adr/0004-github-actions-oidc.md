@@ -15,22 +15,36 @@
 
 GitHub이 워크플로마다 발급하는 OIDC 토큰을 AWS가 신뢰하도록 등록합니다. 워크플로는 이 토큰으로 최대 1시간짜리 임시 자격 증명을 받습니다. 저장소 시크릿에는 역할 ARN만 두고, 액세스 키는 어디에도 없습니다.
 
-**2. 신뢰 정책: 이 저장소의 `main` 브랜치만**
+**2. 신뢰 정책: `production` Environment만**
 
-`sub` 조건을 `repo:SehyeokKim/sehyeokkim.com:ref:refs/heads/main`으로 고정합니다. PR, 포크, 다른 브랜치에서 실행된 워크플로는 역할을 맡을 수 없습니다. 그래서 PR CI(`ci.yml`)는 AWS 없이 `fmt` · `validate`만 합니다.
+`sub` 조건을 `repo:SehyeokKim/sehyeokkim.com:environment:production`으로 고정합니다. GitHub Environment 설정에서 `production`은 `main` 브랜치에서만 배포할 수 있게 제한합니다.
+
+브랜치 조건(`ref:refs/heads/main`)만 두지 않은 이유가 있습니다. `pull_request_target`, `workflow_run` 같은 트리거는 PR 코드를 `main` 컨텍스트로 실행할 수 있어, 브랜치 조건을 그대로 통과합니다. PR · 포크에서 실행된 워크플로는 역할을 맡을 수 없으므로, PR CI(`ci.yml`)는 AWS 없이 `fmt` · `validate`만 합니다.
 
 **3. 권한 정책: 프로젝트가 쓰는 서비스 · 리소스만**
 
 | 범위 | 허용 |
 |---|---|
-| 서비스 | S3(사이트 버킷), CloudFront, Lambda, API Gateway, DynamoDB, CloudWatch Logs, SSM 읽기, IAM(앱 역할만) |
+| 서비스 | S3(사이트 버킷), CloudFront, Lambda, API Gateway(HTTP API만), DynamoDB(테이블 관리만), CloudWatch Logs, IAM(앱 역할만) |
 | 리소스 | 이름이 `sehyeokkim-`(서비스별 세부 접두어)으로 시작하는 리소스, 서울 리전 |
-| Terraform state | `prod/` 경로 객체 읽기 · 쓰기만. 버킷 설정 변경 · 삭제 불가 |
-| 없음 | EC2, RDS, NAT Gateway, ECS 등 상시 과금 서비스, IAM 사용자 · 액세스 키 생성 |
+| Terraform state | `prod/` 경로 객체 읽기 · 쓰기만. 버킷 설정 변경 · 삭제 불가, bootstrap state 접근 불가 |
+| 없음 | EC2, RDS, NAT Gateway, ECS 등 상시 과금 서비스, IAM 사용자 · 액세스 키 생성, SSM 비밀값 읽기 |
 
-CloudFront처럼 리소스 단위 제한을 지원하지 않는 작업만 서비스 단위(`*`)로 허용했습니다.
+CloudFront처럼 리소스 단위 제한을 지원하지 않는 작업만 서비스 단위(`*`)로 허용했습니다. CloudFront는 쓴 만큼만 과금되고 상시 과금 기능이 없습니다.
 
-**4. 권한 상한선(permissions boundary)으로 권한 상승 차단**
+**4. 서비스 단위 허용에 섞인 위험한 작업은 명시적 거부**
+
+`lambda:*`, `dynamodb:*`처럼 서비스 단위로 허용하면 쓰지 않는 위험한 작업도 함께 열립니다. 이런 작업은 Deny로 막습니다. IAM에서는 Deny가 Allow보다 우선합니다.
+
+| 거부 | 이유 |
+|---|---|
+| Lambda 프로비저닝된 동시성 | 상시 과금 |
+| Lambda 함수 URL | CloudFront를 우회하는 공개 주소가 생김 |
+| API Gateway 외 주체에 Lambda 호출 권한 부여 | 다른 계정 · 퍼블릭 호출 차단 |
+| DynamoDB 데이터 읽기 · 쓰기, 리소스 정책, S3 내보내기 | 배포에는 테이블 관리만 필요. 구직 정보 유출 경로 차단 |
+| REST API (`/restapis`) | 캐시 클러스터 등 시간당 과금 기능. 이 프로젝트는 HTTP API만 사용 |
+
+**5. 권한 상한선(permissions boundary)으로 권한 상승 차단**
 
 배포 역할은 Lambda 실행 역할을 만들어야 하므로 IAM 역할 생성 권한이 필요합니다. 이것을 그대로 두면 Admin 권한이 붙은 역할을 만들어 권한을 키울 수 있습니다. 그래서 다음과 같이 막습니다.
 
@@ -39,9 +53,20 @@ CloudFront처럼 리소스 단위 제한을 지원하지 않는 작업만 서비
 - 배포 역할은 상한선 정책과 자기 자신을 수정할 수 없습니다.
 - 앱 역할은 Lambda에만 넘겨줄 수 있습니다(`iam:PassedToService`).
 
-**5. 이 구성 자체는 `infra/bootstrap`에서 사람이 SSO로 1회 적용**
+**6. 계정 수준 안전장치**
 
-배포 역할이 자기 권한을 고칠 수 없게 하려고, 이 구성은 CI가 아니라 로컬에서 SSO 관리자 권한으로만 적용합니다.
+- **계정 전체 S3 퍼블릭 차단**: 사이트 버킷 정책이 바뀌어도 공개되지 않습니다. 배포 역할에는 이 설정을 바꿀 권한이 없습니다.
+- **IAM Access Analyzer(외부 접근 분석)**: 다른 계정이나 퍼블릭에 공유된 리소스를 감지합니다. 무료입니다.
+
+**7. 위험한 작업은 자동화하지 않고 사람이 직접**
+
+자동 배포는 사이트 · 앱의 일상 변경만 맡습니다. 다음 작업은 배포 역할에 권한을 주지 않고, 사람이 로컬 SSO나 콘솔에서 직접 합니다.
+
+- IAM 권한 변경과 `infra/bootstrap` 적용
+- 비밀값 입력 · 교체
+- 계정 · 조직 수준 설정
+- 삭제 등 되돌리기 어려운 작업
+- 도메인 · DNS · 인증서
 
 ## 대안
 
@@ -50,9 +75,12 @@ CloudFront처럼 리소스 단위 제한을 지원하지 않는 작업만 서비
 | IAM 사용자 액세스 키를 GitHub 시크릿에 저장 | 키는 직접 삭제하기 전까지 유효합니다. 유출되면 워크플로를 고쳐도 계속 악용될 수 있고, 주기적으로 교체해야 합니다. |
 | 배포 역할에 `AdministratorAccess` | 설정은 가장 간단하지만, 역할이 탈취되면 EC2 채굴로 인한 과금, IAM 사용자 생성(백도어), state 삭제까지 가능해집니다. |
 | 상한선 없이 IAM 역할 생성 허용 | Admin 정책을 붙인 역할을 만들어 권한을 키울 수 있어, 최소 권한이 의미가 없어집니다. |
+| 신뢰 조건을 `main` 브랜치로만 제한 | `pull_request_target` 등 PR 코드를 `main` 컨텍스트로 실행하는 트리거를 막지 못합니다. |
 
 ## 결과
 
-- CI에 장기 자격 증명이 없습니다. 역할이 탈취돼도 피해는 이 사이트의 리소스 안으로 한정됩니다.
-- 새 서비스가 필요해지면 배포가 `AccessDenied`로 실패합니다. 그때마다 bootstrap에 권한을 추가하는 PR을 만들어 변경 이력을 남깁니다. 예를 들어 도메인 승인 후 ACM과 Route 53 권한을 추가합니다.
-- 서드파티 Action은 커밋 SHA로 고정해, 태그가 바뀌어도 검증하지 않은 코드가 실행되지 않게 합니다.
+- CI에 장기 자격 증명이 없습니다. 역할이 탈취돼도 상시 과금 리소스, IAM 사용자, 데이터 직접 조회, 외부 공유는 막혀 있습니다.
+- **남는 위험**: 배포 역할은 Lambda 코드를 바꿀 수 있습니다. 그래서 악성 코드를 배포하면 Lambda가 가진 권한(SSM 비밀값, 테이블 데이터)에는 간접적으로 접근할 수 있습니다. 코드를 배포하는 파이프라인이라면 어디나 갖는 한계입니다. 이 위험은 배포 경로 자체를 지키는 것으로 줄입니다: `production` Environment, `main` 보호 규칙, Action SHA 고정, Dependabot.
+- **남는 위험**: DynamoDB 테이블을 프로비저닝 모드로 바꾸는 것은 IAM 조건으로 막을 수 없습니다. Budgets 알림으로 감지합니다.
+- 새 서비스가 필요해 배포가 `AccessDenied`로 실패하면, 위험한 작업인지 먼저 판단합니다. 위험한 작업이면 사람이 직접 하고, 일상 변경에 필요한 권한만 bootstrap PR로 최소 범위만 추가합니다.
+- 서드파티 Action은 커밋 SHA로 고정하고, Dependabot이 새 버전을 PR로 알려 줍니다.
