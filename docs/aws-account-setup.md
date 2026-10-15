@@ -39,6 +39,27 @@ AWS Organizations로 계정 2개를 나눠 씁니다.
 IAM 사용자의 액세스 키는 직접 삭제하기 전까지 유효합니다. 노트북이나 설정 파일에서 유출되면 그대로 악용될 수 있습니다.
 SSO 임시 자격 증명은 정해진 시간이 지나면 자동으로 만료되고, 로그인할 때마다 MFA를 거칩니다.
 
+## 기계의 접근: GitHub Actions
+
+자동 배포는 사람의 SSO 역할이 아니라 배포 전용 역할 `sehyeokkim-github-deploy`를 씁니다. 이 역할은 [`infra/bootstrap`](../infra/bootstrap)에서 Terraform으로 관리합니다.
+
+| | 사람 | GitHub Actions |
+|---|---|---|
+| 역할 | `AWSReservedSSO_AdministratorAccess_…` (권한 세트를 할당하면 자동 생성) | `sehyeokkim-github-deploy` (Terraform으로 생성) |
+| 용도 | 콘솔 작업, `infra/bootstrap` 같은 1회성 적용 | `main` 병합 시 자동 배포 |
+| 인증 | 비밀번호 + MFA → SSO 임시 자격 증명 | GitHub OIDC 토큰 → 임시 자격 증명 (최대 1시간) |
+| 맡을 수 있는 조건 | Identity Center에서 할당된 사용자 | 이 저장소의 `main` 브랜치에서 실행된 워크플로 |
+| 권한 | 관리자 | 사이트에 필요한 서비스 · 리소스만 |
+
+**왜 역할을 나눴나**
+
+- **MFA를 자동화할 수 없음**: SSO 역할은 사람이 브라우저에서 MFA를 거쳐야 쓸 수 있어, 워크플로에서는 쓸 수 없습니다.
+- **장기 키를 두지 않음**: 사람 역할을 CI에서 쓰려면 액세스 키를 GitHub에 저장해야 합니다. OIDC는 실행할 때마다 짧은 임시 자격 증명만 받습니다.
+- **피해 범위 축소**: 워크플로 안에서는 npm 패키지, 서드파티 Action 같은 외부 코드도 함께 실행됩니다. 그래서 관리자 권한 대신 배포에 필요한 권한만 줍니다.
+- **자기 권한 수정 방지**: 배포 역할과 그 권한은 사람이 SSO로 bootstrap을 적용할 때만 바뀝니다. 배포 역할은 자기 권한을 고칠 수 없습니다.
+
+세부 권한 설계는 [ADR 0004](adr/0004-github-actions-oidc.md)에 있습니다.
+
 ## 비용 알림
 
 - **프리 티어 사용량 알림**, **CloudWatch 결제 알림**: 관리 계정에서 켬
