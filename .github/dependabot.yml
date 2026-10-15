@@ -18,7 +18,9 @@ updates:
     commit-message:
       prefix: infra
 
-  # 웹 의존성 (Next.js · React 등). 한 PR로 묶어 받는다
+  # 웹 의존성 (Next.js · React 등)
+  # 마이너 · 패치(보안 패치 대부분)와 메이저를 다른 PR로 나눈다.
+  # 메이저는 깨지는 변경이 있을 수 있어, 하나가 실패해도 마이너 · 패치 업데이트가 막히지 않게 한다.
   - package-ecosystem: npm
     directory: /web
     schedule:
@@ -26,5 +28,9 @@ updates:
     commit-message:
       prefix: chore
     groups:
-      web:
+      web-minor-patch:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
+      web-major:
+        patterns: ["*"]
+        update-types: ["major"]
