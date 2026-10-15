@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # 커밋 SHA로 고정한 GitHub Action의 새 버전을 주 1회 PR로 알린다
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
+  # Terraform provider 버전(.terraform.lock.hcl)
+  - package-ecosystem: terraform
+    directory: /infra/bootstrap
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: infra
