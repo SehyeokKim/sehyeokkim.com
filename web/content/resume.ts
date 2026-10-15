@@ -17,8 +17,16 @@ export type Credential = {
   date: string;
 };
 
+// level은 1–5 자기 평가. 정하지 않으면(undefined) 화면에 별을 표시하지 않는다
+export type Skill = {
+  name: string;
+  level?: 1 | 2 | 3 | 4 | 5;
+};
+
 export const profile = {
   name: "김세혁",
+  nameEn: "", // 영문 이름 표기를 정하면 입력. 비어 있으면 표시하지 않는다
+  role: "Cloud · Infrastructure",
   headline: "TODO: 한 줄 소개 (예: 지원 직무와 강점)",
   intro: [
     "TODO: 소개 문단 1",
@@ -28,11 +36,11 @@ export const profile = {
   github: "https://github.com/SehyeokKim",
 };
 
-export const skills: { category: string; items: string[] }[] = [
-  { category: "Cloud · Infra", items: ["TODO"] },
-  { category: "IaC · CI/CD", items: ["TODO"] },
-  { category: "Language", items: ["TODO"] },
-  { category: "Etc", items: ["TODO"] },
+export const skills: { category: string; items: Skill[] }[] = [
+  { category: "Cloud · Infra", items: [{ name: "TODO" }] },
+  { category: "IaC · CI/CD", items: [{ name: "TODO" }] },
+  { category: "Language", items: [{ name: "TODO" }] },
+  { category: "Etc", items: [{ name: "TODO" }] },
 ];
 
 export const projects: Project[] = [1, 2, 3, 4].map((n) => ({
