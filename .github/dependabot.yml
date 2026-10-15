@@ -10,7 +10,9 @@ updates:
 
   # Terraform provider 버전(.terraform.lock.hcl)
   - package-ecosystem: terraform
-    directory: /infra/bootstrap
+    directories:
+      - /infra/bootstrap
+      - /infra/envs/prod
     schedule:
       interval: weekly
     commit-message:
