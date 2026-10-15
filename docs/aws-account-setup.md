@@ -46,9 +46,9 @@ SSO 임시 자격 증명은 정해진 시간이 지나면 자동으로 만료되
 | | 사람 | GitHub Actions |
 |---|---|---|
 | 역할 | `AWSReservedSSO_AdministratorAccess_…` (권한 세트를 할당하면 자동 생성) | `sehyeokkim-github-deploy` (Terraform으로 생성) |
-| 용도 | 콘솔 작업, `infra/bootstrap` 같은 1회성 적용 | `main` 병합 시 자동 배포 |
+| 용도 | 콘솔 작업, `infra/bootstrap` 적용, 비밀값 · 계정 설정 같은 위험한 작업 | `main` 병합 시 사이트 · 앱 자동 배포 |
 | 인증 | 비밀번호 + MFA → SSO 임시 자격 증명 | GitHub OIDC 토큰 → 임시 자격 증명 (최대 1시간) |
-| 맡을 수 있는 조건 | Identity Center에서 할당된 사용자 | 이 저장소의 `main` 브랜치에서 실행된 워크플로 |
+| 맡을 수 있는 조건 | Identity Center에서 할당된 사용자 | 이 저장소의 `production` Environment 작업 (`main` 브랜치만 배포 허용) |
 | 권한 | 관리자 | 사이트에 필요한 서비스 · 리소스만 |
 
 **왜 역할을 나눴나**
