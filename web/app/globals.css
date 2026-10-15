@@ -281,11 +281,14 @@ h3 {
 
 .arch {
   margin: 20px 0;
+  /* 좁은 화면에서는 구성도만 가로 스크롤 (글자가 읽히지 않을 만큼 줄어들지 않게) */
+  overflow-x: auto;
 }
 
 .arch svg {
   display: block;
   width: 100%;
+  min-width: 560px;
   height: auto;
 }
 
