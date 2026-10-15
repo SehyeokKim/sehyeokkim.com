@@ -1,0 +1,66 @@
+# ── OS · 에디터 ──
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# ── 비밀값 · 환경 변수 ──
+.env
+.env*
+!.env.example
+*.pem
+*.key
+
+# ── Node · Next.js (web/) ──
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel/
+
+# ── Python (api/) ──
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+# Lambda 배포 패키지
+*.zip
+
+# ── Terraform (infra/) ──
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+crash.*.log
+*.tfplan
+tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate.lock.info
+# .terraform.lock.hcl 은 커밋한다 (provider 버전 고정)
+
+# ── 안전장치: 상위 폴더의 비공개 자료가 실수로 복사된 경우 ──
+private-docs/
+private-data/
