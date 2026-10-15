@@ -33,6 +33,12 @@ jobs:
           terraform init -backend=false -input=false
           terraform validate
 
+      - name: validate (envs/prod)
+        working-directory: infra/envs/prod
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
   web:
     name: web
     runs-on: ubuntu-latest
