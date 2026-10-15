@@ -52,7 +52,7 @@ docs/         아키텍처 문서와 ADR(설계 결정 기록)
 - [0001 브랜치 전략: GitHub Flow + Squash merge](docs/adr/0001-github-flow.md)
 - 0002 서버리스(S3 + CloudFront + Lambda) 선택 — 작성 예정
 - 0003 CloudFront 단일 출처 + 쿠키 인증 — 작성 예정
-- 0004 GitHub Actions OIDC 배포 — 작성 예정
+- [0004 GitHub Actions OIDC 배포와 최소 권한 배포 역할](docs/adr/0004-github-actions-oidc.md)
 - 0005 비용 제한 원칙 — 작성 예정
 
 ## 보안
@@ -60,6 +60,7 @@ docs/         아키텍처 문서와 ADR(설계 결정 기록)
 - **멀티 계정**: 결제 · 사용자 관리용 관리 계정과 사이트 리소스용 워크로드 계정을 분리했습니다.
 - **SSO + MFA**: 사람은 IAM Identity Center로만 접근합니다. IAM 사용자와 장기 액세스 키는 0개입니다.
 - **루트 사용자**: MFA를 등록하고 일상 작업에는 쓰지 않습니다.
+- **배포**: GitHub Actions는 OIDC로 임시 자격 증명을 받는 배포 전용 역할을 씁니다. 이 저장소의 `main` 브랜치만 맡을 수 있고, 권한은 사이트에 필요한 서비스로 한정했습니다.
 
 자세한 기준은 [AWS 계정 보안 기준](docs/aws-account-setup.md)에 있습니다.
 
