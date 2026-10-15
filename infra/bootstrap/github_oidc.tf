@@ -51,8 +51,9 @@ data "aws_iam_policy_document" "github_trust" {
 }
 
 resource "aws_iam_role" "github_deploy" {
-  name                 = "${var.project}-github-deploy"
-  description          = "GitHub Actions(main) 배포 역할"
+  name = "${var.project}-github-deploy"
+  # IAM 역할 description은 ASCII · Latin-1만 허용한다 (한글 불가)
+  description          = "GitHub Actions deploy role (main branch only)"
   assume_role_policy   = data.aws_iam_policy_document.github_trust.json
   max_session_duration = 3600
 }
