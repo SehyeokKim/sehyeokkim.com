@@ -15,3 +15,14 @@ updates:
       interval: weekly
     commit-message:
       prefix: infra
+
+  # 웹 의존성 (Next.js · React 등). 한 PR로 묶어 받는다
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      web:
+        patterns: ["*"]
