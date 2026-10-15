@@ -52,7 +52,7 @@ docs/         아키텍처 문서와 ADR(설계 결정 기록)
 - [0001 브랜치 전략: GitHub Flow + Squash merge](docs/adr/0001-github-flow.md)
 - 0002 서버리스(S3 + CloudFront + Lambda) 선택 — 작성 예정
 - 0003 CloudFront 단일 출처 + 쿠키 인증 — 작성 예정
-- 0004 GitHub Actions OIDC 배포 — 작성 예정
+- [0004 GitHub Actions OIDC 배포와 최소 권한 배포 역할](docs/adr/0004-github-actions-oidc.md)
 - 0005 비용 제한 원칙 — 작성 예정
 
 ## 보안
