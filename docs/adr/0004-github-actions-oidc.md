@@ -17,7 +17,9 @@ GitHub이 워크플로마다 발급하는 OIDC 토큰을 AWS가 신뢰하도록 
 
 **2. 신뢰 정책: `production` Environment만**
 
-`sub` 조건을 `repo:SehyeokKim/sehyeokkim.com:environment:production`으로 고정합니다. GitHub Environment 설정에서 `production`은 `main` 브랜치에서만 배포할 수 있게 제한합니다.
+`sub` 조건을 `repo:SehyeokKim@211638747/sehyeokkim.com@1418686194:environment:production`으로 고정합니다. GitHub Environment 설정에서 `production`은 `main` 브랜치에서만 배포할 수 있게 제한합니다.
+
+이 저장소는 GitHub의 불변 subject 형식을 씁니다. 저장소 이름 대신 소유자 · 저장소의 고유 ID(공개 값)가 들어가므로, 저장소 이름이 바뀌거나 같은 이름의 저장소가 다시 만들어져도 다른 저장소가 역할을 맡을 수 없습니다. 처음에는 이름 형식(`repo:SehyeokKim/sehyeokkim.com:...`)으로 조건을 걸어 첫 배포가 `AssumeRoleWithWebIdentity` 거부로 실패했고, 실제 토큰 형식에 맞춰 고쳤습니다.
 
 브랜치 조건(`ref:refs/heads/main`)만 두지 않은 이유가 있습니다. `pull_request_target`, `workflow_run` 같은 트리거는 PR 코드를 `main` 컨텍스트로 실행할 수 있어, 브랜치 조건을 그대로 통과합니다. PR · 포크에서 실행된 워크플로는 역할을 맡을 수 없으므로, PR CI(`ci.yml`)는 AWS 없이 `fmt` · `validate`만 합니다.
 
