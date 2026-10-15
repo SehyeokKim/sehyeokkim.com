@@ -1,23 +1,22 @@
 # GitHub Actions가 장기 액세스 키 없이 AWS에 배포하기 위한 구성.
 #
 # 1. OIDC 공급자: GitHub이 발급한 토큰을 AWS가 신뢰하도록 등록한다.
-# 2. 배포 역할: production Environment(main 브랜치만 배포 허용)의 작업만 맡을 수 있고,
-#    이 프로젝트가 쓰는 서비스 · 리소스로 권한을 한정한다. 비용 · 데이터 유출로 이어지는 작업은 명시적으로 거부한다.
-# 3. 권한 상한선(permissions boundary): 배포 역할이 만드는 앱 역할(Lambda 실행 역할 등)이
-#    넘을 수 없는 최대 권한. 배포 역할이 Admin 역할을 만들어 권한을 키우는 것을 막는다.
+# 2. 배포 역할: production Environment(main 브랜치만 배포 허용)의 작업만 맡을 수 있다.
+#    인프라 변경은 사람이 로컬 SSO로 적용하므로(ADR 0006), 배포 역할은 웹 파일 업로드와 캐시 무효화만 한다.
+# 3. 권한 상한선(permissions boundary): 앱 역할(Lambda 실행 역할 등)이 넘을 수 없는 최대 권한.
+#    앱 역할을 만들 때 항상 붙여, 실수로 넓은 정책을 붙여도 상한선을 넘지 못하게 한다.
 #
 # 이름 규칙
-# - 사이트 리소스:      ${project}-site-*, ${project}-api-*, ${project}-jobs* 등 ${project}-* (단, 아래 예외 제외)
-# - 앱 IAM 역할:        ${project}-app-*   ← 배포 역할이 만들고 고칠 수 있는 유일한 IAM 역할
-# - 배포 역할 · 상한선: ${project}-github-deploy, ${project}-app-boundary ← 배포 역할이 수정 불가
+# - 사이트 버킷:        ${project}-site-*  ← 배포 역할이 파일을 쓸 수 있는 유일한 버킷
+# - 앱 IAM 역할:        ${project}-app-*   ← 상한선 정책을 붙인다
+# - 배포 역할 · 상한선: ${project}-github-deploy, ${project}-app-boundary
 
 locals {
   account_id = data.aws_caller_identity.current.account_id
   region     = var.region
 
-  state_bucket_arn = aws_s3_bucket.tfstate.arn
-  app_role_arn     = "arn:aws:iam::${local.account_id}:role/${var.project}-app-*"
-  boundary_arn     = "arn:aws:iam::${local.account_id}:policy/${var.project}-app-boundary"
+  app_role_arn = "arn:aws:iam::${local.account_id}:role/${var.project}-app-*"
+  boundary_arn = "arn:aws:iam::${local.account_id}:policy/${var.project}-app-boundary"
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -62,212 +61,27 @@ resource "aws_iam_role" "github_deploy" {
 }
 
 # ── 배포 역할: 권한 정책 ──────────────────────────────────────────────
+# 웹 빌드 결과를 사이트 버킷에 동기화(aws s3 sync --delete)하고 CloudFront 캐시를 비우는 데 필요한 권한만 준다.
+# Terraform state, IAM, Lambda 등 다른 서비스 권한은 없다. 명시하지 않은 작업은 모두 거부된다.
 
 data "aws_iam_policy_document" "github_deploy" {
-  # Terraform state: prod 경로의 객체 읽기 · 쓰기와 잠금 파일만. 버킷 자체는 건드릴 수 없다.
   statement {
-    sid       = "StateList"
+    sid       = "SiteBucketList"
     actions   = ["s3:ListBucket"]
-    resources = [local.state_bucket_arn]
-
-    condition {
-      test     = "StringLike"
-      variable = "s3:prefix"
-      values   = ["prod/*"]
-    }
+    resources = ["arn:aws:s3:::${var.project}-site-*"]
   }
 
   statement {
-    sid       = "StateObjects"
+    sid       = "SiteBucketObjects"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${local.state_bucket_arn}/prod/*"]
+    resources = ["arn:aws:s3:::${var.project}-site-*/*"]
   }
 
-  # 정적 사이트 버킷
+  # 계정에 CloudFront 배포는 이 사이트 하나뿐이다. 배포 ID는 prod 스택에서 정해져 bootstrap에서는 알 수 없어 배포 단위(*)로 둔다.
   statement {
-    sid     = "SiteBucket"
-    actions = ["s3:*"]
-    resources = [
-      "arn:aws:s3:::${var.project}-site-*",
-      "arn:aws:s3:::${var.project}-site-*/*",
-    ]
-  }
-
-  # CloudFront는 배포 생성 · 정책 · OAC 등 대부분의 작업이 리소스 단위 제한을 지원하지 않는다
-  statement {
-    sid       = "CloudFront"
-    actions   = ["cloudfront:*"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "Lambda"
-    actions   = ["lambda:*"]
-    resources = ["arn:aws:lambda:${local.region}:${local.account_id}:function:${var.project}-*"]
-  }
-
-  # HTTP API (API Gateway v2)만 허용. REST API(/restapis)는 캐시 클러스터처럼 시간당 과금 기능이 있어 제외한다.
-  # API Gateway ARN에는 계정 ID가 없어 리전 · 경로로 한정한다.
-  statement {
-    sid     = "ApiGatewayHttpApi"
-    actions = ["apigateway:*"]
-    resources = [
-      "arn:aws:apigateway:${local.region}::/apis",
-      "arn:aws:apigateway:${local.region}::/apis/*",
-      "arn:aws:apigateway:${local.region}::/tags/*",
-    ]
-  }
-
-  statement {
-    sid     = "DynamoDB"
-    actions = ["dynamodb:*"]
-    resources = [
-      "arn:aws:dynamodb:${local.region}:${local.account_id}:table/${var.project}-*",
-      "arn:aws:dynamodb:${local.region}:${local.account_id}:table/${var.project}-*/*",
-    ]
-  }
-
-  statement {
-    sid     = "Logs"
-    actions = ["logs:*"]
-    resources = [
-      "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/${var.project}-*",
-      "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/${var.project}-*:*",
-      "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/apigateway/${var.project}-*",
-      "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/apigateway/${var.project}-*:*",
-    ]
-  }
-
-  # 로그 그룹 조회와 API Gateway 액세스 로그 전송 설정은 리소스 단위 제한을 지원하지 않는다
-  statement {
-    sid = "LogsAccountLevel"
-    actions = [
-      "logs:DescribeLogGroups",
-      "logs:CreateLogDelivery",
-      "logs:GetLogDelivery",
-      "logs:UpdateLogDelivery",
-      "logs:DeleteLogDelivery",
-      "logs:ListLogDeliveries",
-      "logs:PutResourcePolicy",
-      "logs:DescribeResourcePolicies",
-    ]
-    resources = ["*"]
-  }
-
-  # SSM 권한은 주지 않는다. 비밀값(SSM SecureString)은 사람이 CLI로 직접 넣고,
-  # Terraform은 파라미터 이름만 Lambda 환경 변수로 넘긴다. 값은 Lambda가 실행 시 읽는다.
-
-  # 앱 역할 생성 · 수정: 반드시 권한 상한선이 붙어 있어야 한다
-  statement {
-    sid = "AppRolesWithBoundary"
-    actions = [
-      "iam:CreateRole",
-      "iam:PutRolePermissionsBoundary",
-      "iam:AttachRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:PutRolePolicy",
-      "iam:DeleteRolePolicy",
-    ]
-    resources = [local.app_role_arn]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PermissionsBoundary"
-      values   = [local.boundary_arn]
-    }
-  }
-
-  statement {
-    sid = "AppRolesManage"
-    actions = [
-      "iam:GetRole",
-      "iam:GetRolePolicy",
-      "iam:ListRolePolicies",
-      "iam:ListAttachedRolePolicies",
-      "iam:ListInstanceProfilesForRole",
-      "iam:UpdateRole",
-      "iam:UpdateRoleDescription",
-      "iam:UpdateAssumeRolePolicy",
-      "iam:TagRole",
-      "iam:UntagRole",
-      "iam:DeleteRole",
-    ]
-    resources = [local.app_role_arn]
-  }
-
-  # 앱 역할은 Lambda에만 넘겨줄 수 있다
-  statement {
-    sid       = "PassAppRoleToLambda"
-    actions   = ["iam:PassRole"]
-    resources = [local.app_role_arn]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PassedToService"
-      values   = ["lambda.amazonaws.com"]
-    }
-  }
-
-  # 상한선 정책은 조회만 가능 (수정 · 삭제 · 해제 불가)
-  statement {
-    sid       = "ReadBoundary"
-    actions   = ["iam:GetPolicy", "iam:GetPolicyVersion"]
-    resources = [local.boundary_arn]
-  }
-
-  # ── 명시적 거부: 위의 서비스 단위 허용(lambda:* 등)에 포함되지만 쓰지 않는 위험한 작업 ──
-  # Deny는 Allow보다 우선한다.
-
-  # 상시 과금(프로비저닝된 동시성)과 CloudFront를 우회하는 공개 주소(함수 URL)
-  statement {
-    sid    = "DenyLambdaCostAndPublicUrl"
-    effect = "Deny"
-    actions = [
-      "lambda:PutProvisionedConcurrencyConfig",
-      "lambda:CreateFunctionUrlConfig",
-      "lambda:UpdateFunctionUrlConfig",
-    ]
-    resources = ["*"]
-  }
-
-  # Lambda 호출 권한은 API Gateway에만 줄 수 있다 (다른 계정 · 퍼블릭 호출 권한 부여 금지)
-  statement {
-    sid       = "DenyLambdaInvokeExceptApiGateway"
-    effect    = "Deny"
-    actions   = ["lambda:AddPermission"]
-    resources = ["*"]
-
-    condition {
-      test     = "StringNotEquals"
-      variable = "lambda:Principal"
-      values   = ["apigateway.amazonaws.com"]
-    }
-  }
-
-  # 배포에는 테이블 관리만 필요하다. 데이터 읽기 · 쓰기, 다른 계정 공유, S3 내보내기는 막는다.
-  statement {
-    sid    = "DenyDynamoDBDataAndSharing"
-    effect = "Deny"
-    actions = [
-      "dynamodb:GetItem",
-      "dynamodb:BatchGetItem",
-      "dynamodb:Query",
-      "dynamodb:Scan",
-      "dynamodb:PutItem",
-      "dynamodb:UpdateItem",
-      "dynamodb:DeleteItem",
-      "dynamodb:BatchWriteItem",
-      "dynamodb:ConditionCheckItem",
-      "dynamodb:PartiQLSelect",
-      "dynamodb:PartiQLInsert",
-      "dynamodb:PartiQLUpdate",
-      "dynamodb:PartiQLDelete",
-      "dynamodb:GetRecords",
-      "dynamodb:GetShardIterator",
-      "dynamodb:PutResourcePolicy",
-      "dynamodb:ExportTableToPointInTime",
-    ]
-    resources = ["*"]
+    sid       = "CloudFrontInvalidation"
+    actions   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
+    resources = ["arn:aws:cloudfront::${local.account_id}:distribution/*"]
   }
 }
 
@@ -283,7 +97,7 @@ resource "aws_iam_role_policy_attachment" "github_deploy" {
 }
 
 # ── 앱 역할 권한 상한선 ───────────────────────────────────────────────
-# 배포 역할이 만드는 모든 앱 역할에 붙는다. 앱 역할의 실제 권한은 (역할 정책 ∩ 이 상한선)이다.
+# 모든 앱 역할에 붙인다. 앱 역할의 실제 권한은 (역할 정책 ∩ 이 상한선)이다.
 
 data "aws_iam_policy_document" "app_boundary" {
   statement {
