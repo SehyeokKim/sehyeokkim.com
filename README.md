@@ -4,7 +4,7 @@
 
 **사이트**: https://sehyeokkim.com
 
-> 🚧 작업 중입니다. 이력서 내용과 로그인 후 화면(`/private`)을 채우고 있습니다.
+> 🚧 작업 중입니다. 공개 이력서는 화면을 갖췄고, 로그인 후 화면(`/private`)과 API를 만들고 있습니다.
 
 ## 무엇이 있나
 
@@ -32,7 +32,7 @@
 
 | 구분 | 사용 기술 |
 |---|---|
-| 웹 | Next.js (정적 export), TypeScript |
+| 웹 | Next.js (정적 export), TypeScript, Pretendard 글꼴 |
 | API | Python, FastAPI + Mangum (Lambda) |
 | 데이터 | DynamoDB (온디맨드) |
 | 인프라 | Terraform (S3 백엔드, `use_lockfile`), AWS `ap-northeast-2` |
@@ -74,6 +74,6 @@ docs/         아키텍처 문서와 ADR(설계 결정 기록)
 
 ## 비용 관리
 
-- 무료 한도 안의 서비스만 사용하고, AWS Budgets로 월 $5 예산과 50% · 100% 알림을 설정합니다.
+- 상시 실행 리소스 없이 사용한 만큼만 과금되는 서비스로 비용을 최소화하고, AWS Budgets로 월 $5 예산과 50% · 100% 알림을 설정합니다.
 - 고정 비용은 도메인 등록(연 $16)과 Route 53 호스팅 영역(월 $0.50)뿐입니다. ACM 공인 인증서와 CloudFront 별칭 레코드 조회는 무료입니다.
 - 상세 비용 표는 1차 배포 후 추가합니다.
