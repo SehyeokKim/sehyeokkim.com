@@ -25,3 +25,21 @@ variable "project" {
   type        = string
   default     = "sehyeokkim"
 }
+
+variable "domain_name" {
+  description = "사이트 도메인 (등록은 관리 계정)"
+  type        = string
+  default     = "sehyeokkim.com"
+}
+
+variable "enable_dns" {
+  description = "이 계정에 호스팅 영역을 둔다 (월 $0.50, 승인됨)"
+  type        = bool
+  default     = true
+}
+
+variable "attach_domain" {
+  description = "인증서 발급 · CloudFront 연결. 처음 적용할 때는 -var=attach_domain=false로 영역만 만들고, 네임서버 위임 뒤 기본값으로 적용한다"
+  type        = bool
+  default     = true
+}
