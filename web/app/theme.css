@@ -1,0 +1,43 @@
+/* 디자인 토큰 — Theme 1c: Ink Contrast (투 블루 + 배포 그린)
+   색은 이 파일에서만 정의하고, globals.css는 변수만 참조한다.
+   accent: 버튼 · 링크 / signal: 사람 검토(HITL) 상태 / ok: 배포 · 정상 상태 */
+:root {
+  --bg: #ffffff;
+  --surface: #f9fafb;
+  --border: #dfe2e7;
+  --text: #0b0d12;
+  --muted: #525866;
+  --accent: #13306e;
+  --accent-text: #ffffff;
+  --tag-bg: #eceef2;
+  --tag-text: #1d2230;
+  /* 사람 검토 (HITL) */
+  --signal: #2f6bff;
+  --signal-bg: #e3ecff;
+  --signal-text: #1f4fd1;
+  /* 배포 · 정상 (Ops) */
+  --ok: #17784f;
+  --ok-bg: #dcf1e6;
+  --radius: 14px;
+  --font: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #08090c;
+    --surface: #1a1d24;
+    --border: #262a33;
+    --text: #f1f2f5;
+    --muted: #9ba1ad;
+    --accent: #c3d4ff;
+    --accent-text: #08090c;
+    --tag-bg: #1d2028;
+    --tag-text: #d8dbe2;
+    --signal: #5b8cff;
+    --signal-bg: #16234a;
+    --signal-text: #9dbcff;
+    --ok: #6fd8a2;
+    --ok-bg: #12291d;
+  }
+}
+
