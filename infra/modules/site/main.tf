@@ -157,6 +157,7 @@ resource "aws_cloudfront_distribution" "site" {
   is_ipv6_enabled     = true
   http_version        = "http2and3"
   price_class         = var.price_class
+  aliases             = var.aliases
 
   origin {
     origin_id                = "s3-site"
@@ -199,8 +200,11 @@ resource "aws_cloudfront_distribution" "site" {
     }
   }
 
-  # 도메인 승인 전에는 CloudFront 기본 인증서(*.cloudfront.net)를 쓴다
+  # 도메인을 연결하지 않으면 CloudFront 기본 인증서(*.cloudfront.net)를 쓴다
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.acm_certificate_arn == null
+    acm_certificate_arn            = var.acm_certificate_arn
+    ssl_support_method             = var.acm_certificate_arn == null ? null : "sni-only"
+    minimum_protocol_version       = var.acm_certificate_arn == null ? "TLSv1" : "TLSv1.2_2021"
   }
 }

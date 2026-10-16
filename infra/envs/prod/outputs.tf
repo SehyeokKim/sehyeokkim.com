@@ -1,6 +1,16 @@
 output "site_url" {
   description = "사이트 주소"
+  value       = var.attach_domain ? "https://${var.domain_name}" : "https://${module.site.distribution_domain_name}"
+}
+
+output "cloudfront_url" {
+  description = "CloudFront 기본 주소 (도메인 연결 후에도 접속 가능)"
   value       = "https://${module.site.distribution_domain_name}"
+}
+
+output "name_servers" {
+  description = "관리 계정의 등록된 도메인 → 네임서버에 넣을 값"
+  value       = module.dns.name_servers
 }
 
 output "site_bucket" {

@@ -13,6 +13,11 @@ output "distribution_domain_name" {
   value       = aws_cloudfront_distribution.site.domain_name
 }
 
+output "distribution_hosted_zone_id" {
+  description = "CloudFront 배포의 Route 53 호스팅 영역 ID (별칭 레코드에 사용)"
+  value       = aws_cloudfront_distribution.site.hosted_zone_id
+}
+
 output "distribution_arn" {
   description = "CloudFront 배포 ARN"
   value       = aws_cloudfront_distribution.site.arn

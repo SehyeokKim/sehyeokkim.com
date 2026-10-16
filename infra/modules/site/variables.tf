@@ -8,3 +8,15 @@ variable "price_class" {
   type        = string
   default     = "PriceClass_200"
 }
+
+variable "aliases" {
+  description = "CloudFront 대체 도메인 이름 (예: sehyeokkim.com, www.sehyeokkim.com). 비우면 cloudfront.net 주소만 쓴다"
+  type        = list(string)
+  default     = []
+}
+
+variable "acm_certificate_arn" {
+  description = "aliases를 덮는 us-east-1 ACM 인증서 ARN. null이면 CloudFront 기본 인증서"
+  type        = string
+  default     = null
+}

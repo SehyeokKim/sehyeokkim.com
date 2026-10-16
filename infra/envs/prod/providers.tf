@@ -13,3 +13,20 @@ provider "aws" {
     }
   }
 }
+
+# CloudFront용 ACM 인증서는 us-east-1에서만 발급할 수 있다
+provider "aws" {
+  alias   = "us_east_1"
+  region  = "us-east-1"
+  profile = var.aws_profile
+
+  allowed_account_ids = [var.account_id]
+
+  default_tags {
+    tags = {
+      Project   = var.project
+      ManagedBy = "terraform"
+      Stack     = "prod"
+    }
+  }
+}
