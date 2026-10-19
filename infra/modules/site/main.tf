@@ -1,7 +1,7 @@
 # 정적 사이트: S3(비공개) + CloudFront.
 # 버킷은 퍼블릭 접근을 모두 막고, CloudFront만 OAC(Origin Access Control) 서명으로 읽는다.
 
-# ── S3 ────────────────────────────────────────────────────────────────
+# S3
 
 resource "aws_s3_bucket" "site" {
   bucket = var.name
@@ -100,7 +100,7 @@ resource "aws_s3_bucket_policy" "site" {
   depends_on = [aws_s3_bucket_public_access_block.site]
 }
 
-# ── CloudFront ────────────────────────────────────────────────────────
+# CloudFront
 
 resource "aws_cloudfront_origin_access_control" "site" {
   name                              = var.name

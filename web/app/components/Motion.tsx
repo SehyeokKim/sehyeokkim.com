@@ -35,7 +35,6 @@ export default function Motion() {
       { rootMargin: "0px 0px -10% 0px", threshold: 0.1 },
     );
     // 나갈 때: 화면 "아래"로 완전히 벗어났을 때만(위로 스크롤해 되돌아간 경우) 다시 숨긴다.
-    // 그래서 아래로 내릴 때만 효과가 돌고, 위로 올릴 때는 위에서 내려오는 블록이 이미 보이는 상태로 그대로 있다
     const hideObserver = new IntersectionObserver((entries) => {
       for (const e of entries) {
         const below = e.boundingClientRect.top >= (e.rootBounds?.bottom ?? window.innerHeight);

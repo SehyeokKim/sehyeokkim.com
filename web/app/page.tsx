@@ -96,7 +96,7 @@ function Level({ level }: { level: Skill["level"] }) {
   );
 }
 
-// 오른쪽 열의 한 항목: 굵은 세로 막대 + "제목 — 한글 부제" + 설명 + (선택) 큰 숫자
+// 오른쪽 열의 한 항목: 굵은 세로 막대 + "제목 + 한글 부제" + 설명 + (선택) 큰 숫자
 function Entry({
   id,
   title,
@@ -116,7 +116,7 @@ function Entry({
     <section id={id} className="entry" data-reveal>
       <div className="entry-body">
         <h2>
-          {title} <span className="entry-sub">— {subtitle}</span>
+          {title} <span className="entry-sub">{subtitle}</span>
         </h2>
         {children}
       </div>
@@ -371,7 +371,7 @@ export default function Home() {
                 )}
                 {detailSections(p).length > 0 && <ProjectDetail project={p} sections={detailSections(p)} />}
                 {projectLegal[p.slug] && (
-                  <LegalPopover id={`legal-${p.slug}`} title={`${p.name} — 법적 고지`} sections={projectLegal[p.slug]} />
+                  <LegalPopover id={`legal-${p.slug}`} title={`${p.name} 법적 고지`} sections={projectLegal[p.slug]} />
                 )}
               </article>
             ))}

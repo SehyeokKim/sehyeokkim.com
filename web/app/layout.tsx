@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     type: "profile",
     locale: "ko_KR",
     // app/og.png/route.tsx가 빌드 때 그리는 미리보기 이미지
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: `${profile.name} — ${profile.role}` }],
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: `${profile.name}, ${profile.role}` }],
   },
   twitter: { card: "summary_large_image" },
 };
@@ -30,11 +30,8 @@ export const viewport: Viewport = {
   ],
 };
 
-// 새로고침하면 브라우저가 직전 스크롤 위치나 주소의 #위치(목차 · 프로젝트 요약을 누르면 붙는다)로 돌아가므로,
-// 새로고침일 때만 #을 지우고 맨 위에서 시작한다. 처음 들어온 #링크(공유받은 주소 등)는 그대로 그 위치로 간다.
-// 화면을 그리기 전에 실행돼야 아래에서 위로 튀는 모습이 보이지 않아 <head>에 바로 넣는다.
-// Chrome은 새로고침을 시작할 때의 #위치로 문서를 읽은 뒤 스크롤하므로, 문서 준비 · 로드 시점에도 한 번 더 맨 위로 보낸다.
-// 사이트의 부드러운 스크롤(scroll-behavior: smooth)이 끼어들지 않게 즉시 이동한다
+// 새로고침일 때만 #을 지우고 맨 위에서 시작한다 (처음 들어온 #링크는 그 위치로 간다). 그리기 전에 돌아야 튀지 않아 <head>에 넣는다.
+// Chrome은 로드 뒤 #위치로 다시 스크롤하므로 로드 시점에도 맨 위로 보내고, smooth 스크롤이 끼어들지 않게 즉시 이동한다
 const startAtTopOnReload = `(function(){try{var n=performance.getEntriesByType("navigation")[0];if(!n||n.type!=="reload")return;history.scrollRestoration="manual";if(location.hash)history.replaceState(null,"",location.pathname+location.search);var top=function(){window.scrollTo({top:0,left:0,behavior:"instant"});};top();document.addEventListener("DOMContentLoaded",top,{once:true});window.addEventListener("load",function(){top();requestAnimationFrame(top);},{once:true});}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

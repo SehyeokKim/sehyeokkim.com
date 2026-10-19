@@ -67,8 +67,8 @@ const edges: Edge[] = [
 // 계정 경계
 const groups = [
   { x: 160, y: 10, w: 630, h: 450, label: "AWS Organizations", outer: true },
-  { x: 175, y: 32, w: 600, h: 293, label: "워크로드 계정 — 사이트 리소스 · 계정 전체 S3 퍼블릭 차단" },
-  { x: 175, y: 345, w: 395, h: 100, label: "관리 계정 — 사용자 · 결제 · 도메인 관리" },
+  { x: 175, y: 32, w: 600, h: 293, label: "워크로드 계정: 사이트 리소스 · 계정 전체 S3 퍼블릭 차단" },
+  { x: 175, y: 345, w: 395, h: 100, label: "관리 계정: 사용자 · 결제 · 도메인 관리" },
 ];
 
 export default function ArchitectureDiagram() {
