@@ -4,6 +4,16 @@ module "site" {
   name                = "${var.project}-site-prod"
   aliases             = module.dns.aliases
   acm_certificate_arn = module.dns.certificate_arn
+  api_domain_name     = module.api.api_domain_name
+}
+
+# 비공개 영역 API (ADR 0008). Lambda 코드는 apply 전에 python api/scripts/build_lambda.py로 만든다
+module "api" {
+  source = "../../modules/api"
+
+  project         = var.project
+  site_url        = "https://${var.domain_name}"
+  lambda_zip_path = var.lambda_zip_path
 }
 
 # 도메인 등록은 관리 계정, DNS(호스팅 영역 · 인증서 · 레코드)는 이 계정 (ADR 0007)

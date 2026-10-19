@@ -34,10 +34,10 @@ const nodes: Node[] = [
   // 워크로드 계정
   { x: C1, y: R1, w: 110, label: "Route 53", sub: "sehyeokkim.com" },
   { x: C2, y: R1, w: 140, label: "S3", sub: "정적 사이트 · OAC" },
-  { x: C3, y: R1, w: 160, label: "SSM Parameter Store", sub: "비밀번호 해시 · JWT 키", planned: true },
+  { x: C3, y: R1, w: 160, label: "SSM Parameter Store", sub: "OAuth 키 · JWT 키", planned: true },
   { x: C1, y: R2, w: 140, label: "CloudFront", sub: "CDN · HTTPS(ACM)" },
   { x: C2, y: R2, w: 140, label: "API Gateway", sub: "/api/* · 비공개 영역", planned: true },
-  { x: C3, y: R2, w: 160, label: "Lambda", sub: "FastAPI · JWT 인증", planned: true },
+  { x: C3, y: R2, w: 160, label: "Lambda", sub: "FastAPI · Google 로그인", planned: true },
   { x: C1, y: R3, w: 140, label: "배포 역할", sub: "OIDC · 최소 권한" },
   { x: C2, y: R3, w: 140, label: "AWS Budgets", sub: "월 예산 알림" },
   { x: C3, y: R3, w: 160, label: "DynamoDB", sub: "지원 후보 공고", planned: true },

@@ -1567,16 +1567,198 @@ p {
   opacity: 0.85;
 }
 
-/* /private/ 자리표시 화면 */
-.private-stub {
-  max-width: 480px;
-  margin: 18vh auto 0;
-  padding: 0 24px;
+/* /private: 로그인 입구 · 설명, /private/jobs: 공고 목록 */
+.private-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
 }
 
-.private-stub h1 {
+.private-back {
+  display: inline-block;
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.private-head {
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.private-head h1 {
   margin-bottom: 8px;
   font-size: 1.8rem;
+}
+
+.private-lead {
+  margin-bottom: 18px;
+  color: var(--muted);
+}
+
+.login-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--signal);
+  background: var(--signal-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.private-section {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.private-section:last-child {
+  border-bottom: none;
+}
+
+.private-section h2 {
+  margin-bottom: 12px;
+  font-size: 1.15rem;
+}
+
+.private-rules,
+.private-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.private-steps {
+  margin-top: 8px;
+}
+
+.private-steps strong {
+  margin-right: 6px;
+}
+
+/* 공고 목록 */
+.jobs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+
+.jobs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.jobs-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.jobs-filter[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.jobs-count {
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.jobs-toolbar .btn-ghost,
+.jobs-message .btn-ghost {
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.88rem;
+  background: none;
+  cursor: pointer;
+}
+
+.jobs-message {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 40px 0;
+  color: var(--muted);
+}
+
+.jobs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.job-dday {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.job-dday.soon {
+  color: var(--signal-text);
+}
+
+.job-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.job-meta,
+.job-memo {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.job-meta strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+@media (max-width: 560px) {
+  .job {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .job-tags {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 860px) {
