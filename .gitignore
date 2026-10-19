@@ -1,4 +1,4 @@
-# ── OS · 에디터 ──
+# OS · 에디터
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -7,14 +7,14 @@ desktop.ini
 .idea/
 *.swp
 
-# ── 비밀값 · 환경 변수 ──
+# 비밀값 · 환경 변수
 .env
 .env*
 !.env.example
 *.pem
 *.key
 
-# ── Node · Next.js (web/) ──
+# Node · Next.js (web/)
 node_modules/
 .next/
 out/
@@ -28,7 +28,7 @@ yarn-error.log*
 pnpm-debug.log*
 .vercel/
 
-# ── Python (api/) ──
+# Python (api/)
 __pycache__/
 *.py[cod]
 .venv/
@@ -43,7 +43,7 @@ dist/
 # Lambda 배포 패키지
 *.zip
 
-# ── Terraform (infra/) ──
+# Terraform (infra/)
 .terraform/
 *.tfstate
 *.tfstate.*
@@ -61,6 +61,6 @@ override.tf.json
 .terraform.tfstate.lock.info
 # .terraform.lock.hcl 은 커밋한다 (provider 버전 고정)
 
-# ── 안전장치: 상위 폴더의 비공개 자료가 실수로 복사된 경우 ──
+# 안전장치: 상위 폴더의 비공개 자료가 실수로 복사된 경우
 private-docs/
 private-data/

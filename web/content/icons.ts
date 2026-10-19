@@ -1,8 +1,8 @@
 // 기술 스택 아이콘 (viewBox 0 0 24 24).
-// 브랜드 로고: Simple Icons v16.33.0 (CC0 1.0) https://simpleicons.org — 상표는 각 소유자의 것이며, 해당 기술을 사용했다는 표시로만 쓴다.
+// 브랜드 로고: Simple Icons v16.33.0 (CC0 1.0) https://simpleicons.org. 상표는 각 소유자의 것이며, 해당 기술을 사용했다는 표시로만 쓴다.
 // 로고를 쓸 수 없는 항목(AWS 등)과 개념 항목: Lucide v1.49.0 https://lucide.dev
 //
-// Lucide — ISC License
+// Lucide: ISC License
 // Copyright (c) 2026 Lucide Icons and Contributors
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { profile, site } from "@/content/resume";
 
-// 링크 미리보기 이미지 (카카오톡 · 슬랙 · 링크드인 · 메일에 주소를 붙여 넣으면 뜨는 카드). layout.tsx의 openGraph.images가 가리킨다.
+// 링크 미리보기 이미지. layout.tsx의 openGraph.images가 가리킨다.
 // 빌드할 때 한 번 그려 out/og.png로 내보낸다. 사이트 헤더와 같은 구성: 그림 + 이름 + 직함 + 한 줄 소개
 // Next 기본 규칙(opengraph-image)은 확장자 없는 파일로 내보내져 CloudFront 경로 변환 · S3 형식 추정과 맞지 않아 .png 경로를 직접 쓴다
 export const dynamic = "force-static";

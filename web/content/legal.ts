@@ -71,14 +71,14 @@ export const legal: LegalSection[] = [
   {
     title: "사용한 소스 · 라이선스",
     items: [
-      { text: "브랜드 아이콘: Simple Icons v16.33.0 — CC0 1.0 (퍼블릭 도메인)", href: "https://simpleicons.org" },
+      { text: "브랜드 아이콘: Simple Icons v16.33.0, CC0 1.0 (퍼블릭 도메인)", href: "https://simpleicons.org" },
       {
-        text: "일반 아이콘: Lucide v1.49.0 — ISC License, Copyright (c) 2026 Lucide Icons and Contributors",
+        text: "일반 아이콘: Lucide v1.49.0, ISC License, Copyright (c) 2026 Lucide Icons and Contributors",
         href: "https://lucide.dev/license",
       },
-      { text: "프레임워크: Next.js · React — MIT License", href: "https://github.com/vercel/next.js/blob/canary/license.md" },
+      { text: "프레임워크: Next.js · React, MIT License", href: "https://github.com/vercel/next.js/blob/canary/license.md" },
       {
-        text: "글꼴: Pretendard v1.3.9 — SIL Open Font License 1.1, Copyright (c) 2021 Kil Hyung-jin",
+        text: "글꼴: Pretendard v1.3.9, SIL Open Font License 1.1, Copyright (c) 2021 Kil Hyung-jin",
         href: "https://github.com/orioncactus/pretendard/blob/main/LICENSE",
       },
       {
@@ -244,7 +244,7 @@ export const projectLegal: Record<string, LegalSection[]> = {
       title: "저작권 · 라이선스",
       items: [
         teamWork("jnucpe20/server-public"),
-        { text: "사용한 오픈소스: FastAPI(MIT), SRS(MIT), PyTorch(BSD), Mosquitto(EPL/EDL), PostgreSQL, Redis 등 — 각 라이선스를 따릅니다." },
+        { text: "사용한 오픈소스: FastAPI(MIT), SRS(MIT), PyTorch(BSD), Mosquitto(EPL/EDL), PostgreSQL, Redis 등. 각 라이선스를 따릅니다." },
         siteCommon,
       ],
     },

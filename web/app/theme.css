@@ -1,4 +1,4 @@
-/* 디자인 토큰 — Theme 1c: Ink Contrast (투 블루 + 배포 그린)
+/* 디자인 토큰: Theme 1c Ink Contrast (투 블루 + 배포 그린)
    색은 이 파일에서만 정의하고, globals.css는 변수만 참조한다.
    accent: 버튼 · 링크 / signal: 사람 검토(HITL) 상태 / ok: 배포 · 정상 상태 */
 :root {

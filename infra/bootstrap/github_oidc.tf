@@ -24,7 +24,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   client_id_list = ["sts.amazonaws.com"]
 }
 
-# ── 배포 역할: 신뢰 정책 ──────────────────────────────────────────────
+# 배포 역할: 신뢰 정책
 
 data "aws_iam_policy_document" "github_trust" {
   statement {
@@ -60,7 +60,7 @@ resource "aws_iam_role" "github_deploy" {
   max_session_duration = 3600
 }
 
-# ── 배포 역할: 권한 정책 ──────────────────────────────────────────────
+# 배포 역할: 권한 정책
 # 웹 빌드 결과를 사이트 버킷에 동기화(aws s3 sync --delete)하고 CloudFront 캐시를 비우는 데 필요한 권한만 준다.
 # Terraform state, IAM, Lambda 등 다른 서비스 권한은 없다. 명시하지 않은 작업은 모두 거부된다.
 
@@ -96,7 +96,7 @@ resource "aws_iam_role_policy_attachment" "github_deploy" {
   policy_arn = aws_iam_policy.github_deploy.arn
 }
 
-# ── 앱 역할 권한 상한선 ───────────────────────────────────────────────
+# 앱 역할 권한 상한선
 # 모든 앱 역할에 붙인다. 앱 역할의 실제 권한은 (역할 정책 ∩ 이 상한선)이다.
 
 data "aws_iam_policy_document" "app_boundary" {

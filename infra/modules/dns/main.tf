@@ -18,7 +18,7 @@ resource "aws_route53_zone" "this" {
   }
 }
 
-# ── ACM 인증서 (CloudFront는 us-east-1 인증서만 쓸 수 있다) ─────────────
+# ACM 인증서 (CloudFront는 us-east-1 인증서만 쓸 수 있다)
 
 resource "aws_acm_certificate" "this" {
   count    = local.attach ? 1 : 0
@@ -60,7 +60,7 @@ resource "aws_acm_certificate_validation" "this" {
   validation_record_fqdns = [for r in aws_route53_record.validation : r.fqdn]
 }
 
-# ── CloudFront 별칭 레코드 (루트 · www, IPv4 · IPv6) ──────────────────
+# CloudFront 별칭 레코드 (루트 · www, IPv4 · IPv6)
 
 resource "aws_route53_record" "alias" {
   for_each = local.attach ? {
