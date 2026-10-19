@@ -12,7 +12,7 @@ function flatten(items: TocItem[]): string[] {
 }
 
 // 목차: 클릭하면 해당 위치로 이동하고, 스크롤 위치에 맞는 항목을 강조한다
-export default function Toc({ items }: { items: TocItem[] }) {
+export default function Toc({ items, footer }: { items: TocItem[]; footer?: React.ReactNode }) {
   const [active, setActive] = useState("");
 
   useEffect(() => {
@@ -68,6 +68,7 @@ export default function Toc({ items }: { items: TocItem[] }) {
   return (
     <nav className="toc" aria-label="목차">
       {render(items)}
+      {footer}
     </nav>
   );
 }
