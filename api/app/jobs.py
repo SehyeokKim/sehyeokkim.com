@@ -10,6 +10,7 @@ from app.config import Settings, get_settings
 
 Status = Literal["new", "candidate", "applied", "excluded"]
 Fit = Literal["high", "mid", "low"]
+ShortText = Annotated[str, Field(max_length=80)]
 # 지원 경로: 공고 원문의 도메인(예: jobs.example.com) 또는 company(회사 채용 페이지)
 Channel = Annotated[str, Field(max_length=253, pattern=r"^(company|[a-z0-9-]+(\.[a-z0-9-]+)+)$")]
 
@@ -31,6 +32,10 @@ class Job(BaseModel):
     fit: Fit | None = None
     memo: str | None = None
     collected_at: date
+    # 직무 · 지원 자격(신입 · 인턴 등) · 연봉 조건은 짧은 값만. 연봉은 출처를 함께 적는다 (예: "3,600만 원 (공고)")
+    role: ShortText | None = None
+    career: ShortText | None = None
+    salary: ShortText | None = None
     applied_at: date | None = None
     applied_via: Channel | None = None
 

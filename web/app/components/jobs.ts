@@ -15,6 +15,10 @@ export type Job = {
   fit: "high" | "mid" | "low" | null;
   memo: string | null;
   collected_at: string;
+  // 직무 · 지원 자격 · 연봉 조건(출처 포함 짧은 값). 예시 공고에는 없을 수 있다
+  role?: string | null;
+  career?: string | null;
+  salary?: string | null;
   // 지원 완료로 바꿀 때 기록한다. 지원 경로는 공고 원문의 도메인 또는 company(회사 채용 페이지)
   applied_at?: string | null;
   applied_via?: string | null;
@@ -60,6 +64,19 @@ export const statusClass: Record<JobStatus, string> = {
   excluded: "status",
 };
 export const fitLabel: Record<NonNullable<Job["fit"]>, string> = { high: "적합도 상", mid: "적합도 중", low: "적합도 하" };
+export type Fit = NonNullable<Job["fit"]>;
+
+// 적합도는 사람이 이 기준으로 매긴다. 목록 위 범례로 보여 준다
+export const fitCriteria: { fit: Fit; label: string; text: string }[] = [
+  {
+    fit: "high",
+    label: "상",
+    text: "희망 직무의 핵심(AI 서비스 백엔드 · 에이전트 · AI 인프라 · 클라우드 · DevOps)이고, Python · Docker · AWS · LLM 요건이 경험과 직접 맞으며, 신입 지원이 가능하고 걸리는 필수 자격이 없음",
+  },
+  { fit: "mid", label: "중", text: "직무는 맞지만 스택 · 요건이 일부만 맞거나, 상세 요건을 확인하지 못함" },
+  { fit: "low", label: "하", text: "희망 직무와 거리가 있거나, 경력 · 학위 요건이 걸리거나, 체험형 인턴" },
+];
+
 export const sourceLabel: Record<string, string> = { manual: "직접 추가" };
 
 export function todayYmd(): string {
@@ -82,9 +99,16 @@ export function isSoon(deadline: string | null): boolean {
   return d.startsWith("D-") || d === "오늘 마감";
 }
 
-// /api/jobs와 같은 순서: 마감일이 빠른 순, 상시 공고는 뒤
+// 마감 전 공고는 마감이 빠른 순, 그다음 상시, 마감이 지난 공고는 맨 뒤 (늦게 지난 것부터)
 export function sortJobs(jobs: Job[]): Job[] {
-  return [...jobs].sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
+  const today = todayYmd();
+  const rank = (j: Job) => (j.deadline === null ? 1 : j.deadline < today ? 2 : 0);
+  return [...jobs].sort((a, b) => {
+    const r = rank(a) - rank(b);
+    if (r !== 0) return r;
+    if (rank(a) === 2) return b.deadline!.localeCompare(a.deadline!);
+    return (a.deadline ?? "").localeCompare(b.deadline ?? "");
+  });
 }
 
 // 링크로 그리는 값은 http(s)만 허용한다 (javascript: 같은 주소가 href에 들어가지 않게)

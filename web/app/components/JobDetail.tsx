@@ -43,6 +43,10 @@ export default function JobDetail({
   const rows: [string, React.ReactNode][] = [
     ["상태", <span key="s" className={statusClass[job.status]}>{statusLabel[job.status]}</span>],
     ["적합도", job.fit ? fitLabel[job.fit].replace("적합도 ", "") : "정하지 않음"],
+    // 직무 · 지원 자격 · 연봉은 값이 있을 때만 (예시 공고에는 없음)
+    ...(job.role ? [["직무", job.role] as [string, React.ReactNode]] : []),
+    ...(job.career ? [["지원 자격", job.career] as [string, React.ReactNode]] : []),
+    ...(job.salary ? [["연봉", job.salary] as [string, React.ReactNode]] : []),
     ["마감", job.deadline ? `${job.deadline} (${dday(job.deadline)})` : "상시"],
     ["지역", job.location ?? "없음"],
     ["고용형태", job.employment_type ?? "없음"],

@@ -59,6 +59,10 @@ def main() -> int:
         kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
     new_items = {j.id: j.model_dump(mode="json", exclude_none=True) | {"expires_at": expires_at(j)} for j in jobs}
+    # 화면에서 지원 완료로 바꾼 공고는 파일 내용으로 상태를 되돌리지 않는다
+    for i, item in new_items.items():
+        if current.get(i, {}).get("status") == "applied":
+            item.update({k: current[i][k] for k in ("status", "applied_at", "applied_via") if k in current[i]})
     added = [i for i in new_items if i not in current]
     changed = [i for i in new_items if i in current and current[i] != new_items[i]]
     removed = [i for i in current if i not in new_items] if args.prune else []

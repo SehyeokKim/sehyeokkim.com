@@ -8,6 +8,8 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 16px;
+  /* 스크롤바가 생기고 사라질 때(예: 공고 목록 필터로 길이가 바뀔 때) 내용이 옆으로 밀리지 않게 자리를 비워 둔다 */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -1697,6 +1699,48 @@ p {
   font-size: 0.88rem;
   background: none;
   cursor: pointer;
+}
+
+.jobs-fit-filters {
+  margin-bottom: 8px;
+}
+
+/* 적합도 기준: 눌러서 펼치는 범례 */
+.jobs-fit-legend {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.jobs-fit-legend summary {
+  cursor: pointer;
+}
+
+.jobs-fit-legend dl {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+
+.jobs-fit-legend dl > div {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.jobs-fit-legend dt {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.jobs-fit-legend dd {
+  margin: 0;
+}
+
+.job-sub {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 0.85rem;
 }
 
 .jobs-message {

@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
   type Job,
+  type Fit,
   type JobStatus,
   LOGIN_EXPIRED,
   dday,
   fetchJobs,
+  fitCriteria,
   fitLabel,
   isSoon,
   statusClass,
@@ -20,6 +22,7 @@ import { sampleJobs } from "./sampleJobs";
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; jobs: Job[] };
 
 const filters: (JobStatus | "all")[] = ["all", "candidate", "new", "applied", "excluded"];
+const fitFilters: (Fit | "all")[] = ["all", "high", "mid", "low"];
 
 const noSubscribe = () => () => {};
 
@@ -37,6 +40,7 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
   // D-day는 오늘 날짜로 계산하므로 빌드 시점의 정적 HTML에는 목록을 넣지 않고 브라우저에서만 그린다
   const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("all");
+  const [fitFilter, setFitFilter] = useState<(typeof fitFilters)[number]>("all");
   const detailHref = sample ? "/private/sample/detail/" : "/private/jobs/detail/";
 
   const load = useCallback(() => {
@@ -60,7 +64,10 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
     window.location.replace("/private/");
   }
 
-  const jobs = state.kind === "ready" ? state.jobs.filter((j) => filter === "all" || j.status === filter) : [];
+  const jobs =
+    state.kind === "ready"
+      ? state.jobs.filter((j) => (filter === "all" || j.status === filter) && (fitFilter === "all" || j.fit === fitFilter))
+      : [];
 
   return (
     <>
@@ -83,6 +90,33 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
           </button>
         )}
       </div>
+      <div className="jobs-filters jobs-fit-filters" role="group" aria-label="적합도로 거르기">
+        {fitFilters.map((f) => (
+          <button
+            key={f}
+            type="button"
+            className="jobs-filter"
+            aria-pressed={fitFilter === f}
+            onClick={() => setFitFilter(f)}
+          >
+            {f === "all" ? "적합도 전체" : fitLabel[f]}
+            {state.kind === "ready" && f !== "all" && (
+              <span className="jobs-count">{state.jobs.filter((j) => j.fit === f).length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+      <details className="jobs-fit-legend">
+        <summary>적합도 기준</summary>
+        <dl>
+          {fitCriteria.map((c) => (
+            <div key={c.fit}>
+              <dt>{c.label}</dt>
+              <dd>{c.text}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
 
       {state.kind === "loading" && (
         <p className="jobs-message" role="status">
@@ -126,6 +160,9 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
                       ))}
                   </span>
                 </Link>
+                {(job.role || job.career || job.salary) && (
+                  <p className="job-sub">{[job.role, job.career, job.salary].filter(Boolean).join(" · ")}</p>
+                )}
                 {job.memo && <p className="job-memo">{job.memo}</p>}
               </div>
               <div className="job-tags">
