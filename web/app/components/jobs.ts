@@ -22,8 +22,6 @@ export type Job = {
   // 지원 완료로 바꿀 때 기록한다. 지원 경로는 공고 원문의 도메인 또는 company(회사 채용 페이지)
   applied_at?: string | null;
   applied_via?: string | null;
-  // 화면에서만 쓰는 표시: data/sample/의 예시 공고. API로 보내거나 저장하지 않는다
-  example?: boolean;
 };
 
 export const COMPANY_CHANNEL = "company";

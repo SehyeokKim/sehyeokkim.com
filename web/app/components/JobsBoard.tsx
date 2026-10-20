@@ -32,22 +32,17 @@ const fitFilters: (Fit | "all")[] = ["all", "high", "mid", "low"];
 
 const noSubscribe = () => () => {};
 
-// 로그인한 본인의 공고 목록 + 예시 공고(sampleJobs). sample이면 API를 부르지 않고 예시 공고만 그린다.
+// 로그인한 본인의 공고 목록. sample이면 API를 부르지 않고 예시 공고(sampleJobs)만 그린다.
 // 공고를 누르면 상세 페이지(?id=)로 간다. 정적 사이트라 공고별 페이지를 빌드 때 만들 수 없기 때문
 export default function JobsBoard({ sample = false }: { sample?: boolean }) {
   const [live, setLive] = useState<State>({ kind: "loading" });
   const sampleList = useSyncExternalStore(sampleJobs.subscribe, sampleJobs.getSnapshot, sampleJobs.getServerSnapshot);
-  // 실제 목록에도 예시 공고를 항상 함께 보여 준다 (내 공고가 없어도 화면 구성을 볼 수 있게)
-  const merged: State = sample
-    ? { kind: "ready", jobs: sampleList }
-    : live.kind === "ready"
-      ? { kind: "ready", jobs: [...live.jobs, ...sampleList] }
-      : live;
+  const base: State = sample ? { kind: "ready", jobs: sampleList } : live;
   // D-day는 오늘 날짜로 계산하므로 빌드 시점의 정적 HTML에는 목록을 넣지 않고 브라우저에서만 그린다
   const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
   // 마감 여부와 정렬도 오늘 날짜에 달려 있어 브라우저에서만 적용한다 (빌드 때의 정적 HTML과 어긋나지 않게)
   const state: State =
-    merged.kind === "ready" && hydrated ? { kind: "ready", jobs: sortJobs(visibleJobs(merged.jobs)) } : merged;
+    base.kind === "ready" && hydrated ? { kind: "ready", jobs: sortJobs(visibleJobs(base.jobs)) } : base;
   const [filter, setFilter] = useState<(typeof filters)[number]>("all");
   const [fitFilter, setFitFilter] = useState<(typeof fitFilters)[number]>("all");
   const [employment, setEmployment] = useState<EmploymentFilter | "all">("all");
@@ -197,7 +192,6 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
                 {job.memo && <p className="job-memo">{job.memo}</p>}
               </div>
               <div className="job-tags">
-                {job.example && !sample && <span className="status">예시</span>}
                 <span className={statusClass[job.status]}>{statusLabel[job.status]}</span>
                 {job.fit && <span className="status">{fitLabel[job.fit]}</span>}
               </div>
