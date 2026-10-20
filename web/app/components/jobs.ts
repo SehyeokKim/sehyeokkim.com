@@ -146,6 +146,14 @@ export function isWebUrl(value: string): boolean {
   }
 }
 
+// 마지막으로 받은 공고 목록. 상세에서 목록으로 돌아오면 이것부터 그려서 스크롤 위치를 되살린다.
+// 브라우저 메모리에만 있어 새로고침하거나 로그아웃(전체 새로고침)하면 비워진다
+let lastJobs: Job[] | null = null;
+
+export function cachedJobs(): Job[] | null {
+  return lastJobs;
+}
+
 // 지원 완료로 바꾸고 바뀐 공고를 돌려준다. 세션이 만료됐으면 /private로 돌려보낸다
 export async function applyJob(id: string, appliedVia: string): Promise<Job | null> {
   try {
@@ -159,7 +167,10 @@ export async function applyJob(id: string, appliedVia: string): Promise<Job | nu
       window.location.replace("/private/?error=expired");
       return null;
     }
-    return res.ok ? ((await res.json()) as Job) : null;
+    if (!res.ok) return null;
+    const updated = (await res.json()) as Job;
+    lastJobs = lastJobs && lastJobs.map((j) => (j.id === updated.id ? updated : j));
+    return updated;
   } catch {
     return null;
   }
@@ -171,7 +182,8 @@ export async function fetchJobs(): Promise<Job[] | "expired" | "error"> {
     const res = await fetch("/api/jobs", { credentials: "same-origin", cache: "no-store" });
     if (res.status === 401) return "expired";
     if (!res.ok) return "error";
-    return (await res.json()).items as Job[];
+    lastJobs = (await res.json()).items as Job[];
+    return lastJobs;
   } catch {
     return "error";
   }
