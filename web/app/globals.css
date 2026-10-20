@@ -1435,3 +1435,335 @@ p {
     }
   }
 }
+
+/* 비공개 대시보드 입구: 목차 아래 링크(본인용) + This Site 소개 카드(채용 담당자용) */
+.lock-icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+/* 목차 맨 아래, 구분선 뒤 한 줄. 목차와 함께 1280px 미만에서는 숨겨진다 */
+.entry-toc {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.entry-toc a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78em;
+}
+
+.entry-toc a:hover {
+  color: var(--accent);
+}
+
+.entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 32px 0 24px;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--accent); /* 사이트 정보 항목 · 상세 소제목과 같은 왼쪽 강조 막대 */
+}
+
+.entry-card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.entry-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 1.1rem;
+}
+
+.entry-card h3 .lock-icon {
+  color: var(--accent);
+}
+
+.entry-card-text p:not(.entry-card-label) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.entry-card-impl {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.entry-card-impl strong {
+  display: inline-block;
+  min-width: 4.5em;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.entry-card code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--tag-bg);
+  font-size: 0.9em;
+}
+
+.entry-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+}
+
+/* 손가락으로 누르기 쉬운 최소 높이 44px */
+.btn-primary,
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn-ghost {
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn-primary:hover,
+.btn-ghost:hover {
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+/* /private: 로그인 입구 · 설명, /private/jobs: 공고 목록 */
+.private-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.private-back {
+  display: inline-block;
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.private-head {
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.private-head h1 {
+  margin-bottom: 8px;
+  font-size: 1.8rem;
+}
+
+.private-lead {
+  margin-bottom: 18px;
+  color: var(--muted);
+}
+
+.login-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--signal);
+  background: var(--signal-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.private-section {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.private-section:last-child {
+  border-bottom: none;
+}
+
+.private-section h2 {
+  margin-bottom: 12px;
+  font-size: 1.15rem;
+}
+
+.private-rules,
+.private-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.private-steps {
+  margin-top: 8px;
+}
+
+.private-steps strong {
+  margin-right: 6px;
+}
+
+/* 공고 목록 */
+.jobs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+
+.jobs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.jobs-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.jobs-filter[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.jobs-count {
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.jobs-toolbar .btn-ghost,
+.jobs-message .btn-ghost {
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.88rem;
+  background: none;
+  cursor: pointer;
+}
+
+.jobs-message {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 40px 0;
+  color: var(--muted);
+}
+
+.jobs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.job-dday {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.job-dday.soon {
+  color: var(--signal-text);
+}
+
+.job-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.job-meta,
+.job-memo {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.job-meta strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+@media (max-width: 560px) {
+  .job {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .job-tags {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 860px) {
+  .entry-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

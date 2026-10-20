@@ -20,3 +20,9 @@ variable "acm_certificate_arn" {
   type        = string
   default     = null
 }
+
+variable "api_domain_name" {
+  description = "API Gateway 호스트 이름. 주면 /api/* 경로를 그쪽으로 보낸다 (캐시 없음, 쿠키 · 쿼리 전달)"
+  type        = string
+  default     = null
+}

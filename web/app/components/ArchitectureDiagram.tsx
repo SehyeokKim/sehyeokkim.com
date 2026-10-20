@@ -34,13 +34,13 @@ const nodes: Node[] = [
   // 워크로드 계정
   { x: C1, y: R1, w: 110, label: "Route 53", sub: "sehyeokkim.com" },
   { x: C2, y: R1, w: 140, label: "S3", sub: "정적 사이트 · OAC" },
-  { x: C3, y: R1, w: 160, label: "SSM Parameter Store", sub: "비밀번호 해시 · JWT 키", planned: true },
+  { x: C3, y: R1, w: 160, label: "SSM Parameter Store", sub: "OAuth 키 · JWT 키" },
   { x: C1, y: R2, w: 140, label: "CloudFront", sub: "CDN · HTTPS(ACM)" },
-  { x: C2, y: R2, w: 140, label: "API Gateway", sub: "/api/* · 비공개 영역", planned: true },
-  { x: C3, y: R2, w: 160, label: "Lambda", sub: "FastAPI · JWT 인증", planned: true },
+  { x: C2, y: R2, w: 140, label: "API Gateway", sub: "/api/* · 비공개 영역" },
+  { x: C3, y: R2, w: 160, label: "Lambda", sub: "FastAPI · Google 로그인" },
   { x: C1, y: R3, w: 140, label: "배포 역할", sub: "OIDC · 최소 권한" },
   { x: C2, y: R3, w: 140, label: "AWS Budgets", sub: "월 예산 알림" },
-  { x: C3, y: R3, w: 160, label: "DynamoDB", sub: "지원 후보 공고", planned: true },
+  { x: C3, y: R3, w: 160, label: "DynamoDB", sub: "지원 후보 공고" },
   // 관리 계정
   { x: C1, y: R4, w: 160, label: "IAM Identity Center", sub: "SSO · MFA" },
   { x: C1 + 200, y: R4, w: 150, label: "Route 53 Domains", sub: "도메인 등록 · NS 위임" },
@@ -52,10 +52,10 @@ const edges: Edge[] = [
   { d: `M${X0 + 65},${R2} V${mid(R1)} H${C1}` }, // 브라우저 → Route 53 (주소 조회)
   { d: `M${X0 + 130},${mid(R2)} H${C1}` }, // 브라우저 → CloudFront
   { d: `M${C1 + 125},${R2} V${mid(R1)} H${C2}` }, // CloudFront → S3 (Route 53 오른쪽으로 비켜 올라간다)
-  { d: `M${C1 + 140},${mid(R2)} H${C2}`, kind: "planned" }, // CloudFront → API Gateway
-  { d: `M${C2 + 140},${mid(R2)} H${C3}`, kind: "planned" }, // API Gateway → Lambda
-  { d: `M${C3 + 80},${R2} V${R1 + H}`, kind: "planned" }, // Lambda → SSM
-  { d: `M${C3 + 80},${R2 + H} V${R3}`, kind: "planned" }, // Lambda → DynamoDB
+  { d: `M${C1 + 140},${mid(R2)} H${C2}` }, // CloudFront → API Gateway
+  { d: `M${C2 + 140},${mid(R2)} H${C3}` }, // API Gateway → Lambda
+  { d: `M${C3 + 80},${R2} V${R1 + H}` }, // Lambda → SSM
+  { d: `M${C3 + 80},${R2 + H} V${R3}` }, // Lambda → DynamoDB
   { d: `M${X0 + 130},${mid(R3)} H${C1}`, kind: "deploy" }, // GitHub Actions → 배포 역할
   { d: `M${C1 + 70},${R3} V${R2 + H}`, kind: "deploy" }, // 배포 역할 → CloudFront (캐시 무효화)
   { d: `M${C1 + 140},${R3 + 20} H${C1 + 170} V${R1 + 40} H${C2}`, kind: "deploy" }, // 배포 역할 → S3 (파일 동기화)
@@ -71,6 +71,9 @@ const groups = [
   { x: 175, y: 345, w: 395, h: 100, label: "관리 계정: 사용자 · 결제 · 도메인 관리" },
 ];
 
+// 점선 범례는 구축 예정인 요소가 있을 때만 보인다
+const hasPlanned = nodes.some((n) => n.planned) || edges.some((e) => e.kind === "planned");
+
 export default function ArchitectureDiagram() {
   return (
     <figure className="arch">
@@ -81,7 +84,7 @@ export default function ArchitectureDiagram() {
           MFA)로 권한 세트를 받아 워크로드 계정에 접근한다. 도메인 sehyeokkim.com은 관리 계정의 Route 53 Domains에
           등록하고, 네임서버는 워크로드 계정의 Route 53 호스팅 영역으로 위임했다. 브라우저는 Route 53에서 주소를 찾아
           CloudFront에 HTTPS(ACM 인증서)로 접속하고, 기본 경로는 S3 정적 사이트로, /api 경로는 API Gateway와 Lambda를
-          거쳐 DynamoDB와 SSM Parameter Store로 연결된다(구축 예정).
+          거쳐 DynamoDB와 SSM Parameter Store로 연결된다.
           GitHub Actions는 OIDC로 최소 권한 배포 역할을 맡아 S3에 파일을 올리고 CloudFront 캐시를 무효화한다.
         </desc>
         <defs>
@@ -129,9 +132,11 @@ export default function ArchitectureDiagram() {
         <span className="legend-item">
           <span className="legend solid" /> 운영 중
         </span>
-        <span className="legend-item">
-          <span className="legend dashed" /> 구축 예정(비공개 영역)
-        </span>
+        {hasPlanned && (
+          <span className="legend-item">
+            <span className="legend dashed" /> 구축 예정
+          </span>
+        )}
         <span className="legend-item">
           <span className="legend deploy" /> 자동 배포
         </span>

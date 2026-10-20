@@ -1,0 +1,58 @@
+[
+  {
+    "id": "sample-001",
+    "company": "예시클라우드",
+    "title": "클라우드 엔지니어 신입",
+    "url": "https://example.com/jobs/001",
+    "deadline": "2026-10-31",
+    "location": "서울",
+    "employment_type": "정규직",
+    "source": "manual",
+    "status": "candidate",
+    "fit": "high",
+    "memo": "AWS 자격증 우대",
+    "collected_at": "2026-10-19"
+  },
+  {
+    "id": "sample-002",
+    "company": "가상데이터",
+    "title": "인프라 운영 인턴",
+    "url": "https://example.com/jobs/002",
+    "deadline": "2026-10-24",
+    "location": "경기",
+    "employment_type": "인턴",
+    "source": "manual",
+    "status": "new",
+    "fit": "mid",
+    "memo": null,
+    "collected_at": "2026-10-19"
+  },
+  {
+    "id": "sample-003",
+    "company": "테스트시스템",
+    "title": "DevOps 엔지니어 (신입 · 경력무관)",
+    "url": "https://example.com/jobs/003",
+    "deadline": null,
+    "location": "인천",
+    "employment_type": "정규직",
+    "source": "manual",
+    "status": "new",
+    "fit": null,
+    "memo": "상시 채용",
+    "collected_at": "2026-10-18"
+  },
+  {
+    "id": "sample-004",
+    "company": "샘플솔루션",
+    "title": "클라우드 보안 신입",
+    "url": "https://example.com/jobs/004",
+    "deadline": "2026-10-22",
+    "location": "서울",
+    "employment_type": "정규직",
+    "source": "manual",
+    "status": "applied",
+    "fit": "high",
+    "memo": "10/18 지원",
+    "collected_at": "2026-10-15"
+  }
+]

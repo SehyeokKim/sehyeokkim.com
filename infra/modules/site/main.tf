@@ -123,6 +123,15 @@ data "aws_cloudfront_cache_policy" "caching_optimized" {
   name = "Managed-CachingOptimized"
 }
 
+# /api/*: 캐시하지 않고, Host를 뺀 요청 헤더 · 쿠키 · 쿼리를 그대로 API Gateway에 넘긴다
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
 resource "aws_cloudfront_response_headers_policy" "security" {
   name    = "${var.name}-security-headers"
   comment = "Security headers for ${var.name}"
@@ -163,6 +172,36 @@ resource "aws_cloudfront_distribution" "site" {
     origin_id                = "s3-site"
     domain_name              = aws_s3_bucket.site.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.site.id
+  }
+
+  dynamic "origin" {
+    for_each = var.api_domain_name == null ? [] : [var.api_domain_name]
+    content {
+      origin_id   = "api"
+      domain_name = origin.value
+
+      custom_origin_config {
+        http_port              = 80
+        https_port             = 443
+        origin_protocol_policy = "https-only"
+        origin_ssl_protocols   = ["TLSv1.2"]
+      }
+    }
+  }
+
+  dynamic "ordered_cache_behavior" {
+    for_each = var.api_domain_name == null ? [] : [var.api_domain_name]
+    content {
+      path_pattern               = "/api/*"
+      target_origin_id           = "api"
+      viewer_protocol_policy     = "redirect-to-https"
+      allowed_methods            = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+      cached_methods             = ["GET", "HEAD"]
+      compress                   = true
+      cache_policy_id            = data.aws_cloudfront_cache_policy.caching_disabled.id
+      origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+      response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
+    }
   }
 
   default_cache_behavior {

@@ -2,6 +2,7 @@ import ArchitectureDiagram from "@/app/components/ArchitectureDiagram";
 import CopyEmail from "@/app/components/CopyEmail";
 import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
 import Motion from "@/app/components/Motion";
+import { EntrySiteCard, EntryToc } from "@/app/components/PrivateEntry";
 import Toc, { type TocItem } from "@/app/components/Toc";
 import { icons, type IconName } from "@/content/icons";
 import { legal, projectLegal } from "@/content/legal";
@@ -191,7 +192,7 @@ export default function Home() {
   return (
     <div className="layout">
       <Motion />
-      <Toc items={toc} />
+      <Toc items={toc} footer={<EntryToc />} />
       <main className="page">
         <header className="hero">
           {/* 프로필 이미지(움직이는 GIF). 움직임 줄이기를 켠 방문자에게는 정지 이미지를 보여 준다 */}
@@ -418,6 +419,7 @@ export default function Home() {
               <span>고정 비용은 도메인 · DNS(연 $16 · 월 $0.5)뿐, 나머지는 사용한 만큼만 과금, 월 $5 예산 알림</span>
             </li>
           </ul>
+          <EntrySiteCard />
           <p className="project-links">
             <a href={site.repository} target="_blank" rel="noopener noreferrer">
               GitHub ↗

@@ -43,3 +43,9 @@ variable "attach_domain" {
   type        = bool
   default     = true
 }
+
+variable "lambda_zip_path" {
+  description = "API Lambda 배포 패키지 (api/scripts/build_lambda.py 결과)"
+  type        = string
+  default     = "../../../api/dist/lambda.zip"
+}
