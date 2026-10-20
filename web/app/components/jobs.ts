@@ -15,6 +15,10 @@ export type Job = {
   fit: "high" | "mid" | "low" | null;
   memo: string | null;
   collected_at: string;
+  // 직무 · 지원 자격 · 연봉 조건(출처 포함 짧은 값). 예시 공고에는 없을 수 있다
+  role?: string | null;
+  career?: string | null;
+  salary?: string | null;
   // 지원 완료로 바꿀 때 기록한다. 지원 경로는 공고 원문의 도메인 또는 company(회사 채용 페이지)
   applied_at?: string | null;
   applied_via?: string | null;
@@ -60,6 +64,19 @@ export const statusClass: Record<JobStatus, string> = {
   excluded: "status",
 };
 export const fitLabel: Record<NonNullable<Job["fit"]>, string> = { high: "적합도 상", mid: "적합도 중", low: "적합도 하" };
+export type Fit = NonNullable<Job["fit"]>;
+
+// 적합도는 사람이 이 기준으로 매긴다. 목록 위 범례로 보여 준다
+export const fitCriteria: { fit: Fit; label: string; text: string }[] = [
+  {
+    fit: "high",
+    label: "상",
+    text: "희망 직무의 핵심(AI 서비스 백엔드 · 에이전트 · AI 인프라 · 클라우드 · DevOps)이고, Python · Docker · AWS · LLM 요건이 경험과 직접 맞으며, 신입 지원이 가능하고 걸리는 필수 자격이 없음",
+  },
+  { fit: "mid", label: "중", text: "직무는 맞지만 스택 · 요건이 일부만 맞거나, 상세 요건을 확인하지 못함" },
+  { fit: "low", label: "하", text: "희망 직무와 거리가 있거나, 경력 · 학위 요건이 걸리거나, 체험형 인턴" },
+];
+
 export const sourceLabel: Record<string, string> = { manual: "직접 추가" };
 
 export function todayYmd(): string {
@@ -82,9 +99,44 @@ export function isSoon(deadline: string | null): boolean {
   return d.startsWith("D-") || d === "오늘 마감";
 }
 
-// /api/jobs와 같은 순서: 마감일이 빠른 순, 상시 공고는 뒤
+// 고용형태 필터: 값이 "정규직/인턴", "계약직(3개월 후 전환)"처럼 섞여 있어 포함 여부로 고른다
+export const employmentFilters = ["정규직", "인턴", "계약직"] as const;
+export type EmploymentFilter = (typeof employmentFilters)[number] | "미확인";
+
+export function matchesEmployment(job: Job, f: EmploymentFilter): boolean {
+  return f === "미확인" ? !job.employment_type : !!job.employment_type?.includes(f);
+}
+
+// 직무 분야 필터: 직무 값은 표현이 제각각이라 키워드로 몇 개 분야에 묶는다. 위에서부터 먼저 맞는 분야
+const roleAreas: [string, RegExp][] = [
+  ["DevOps · SRE · MLOps", /devops|sre|mlops|llmops|플랫폼 엔지니어/i],
+  ["보안", /보안|관제|cert|침해|악성/i],
+  ["AX · DX", /\bax\b|\bdx\b|ax ·|dx ·/i],
+  ["AI · 에이전트", /ai|llm|\bml\b|에이전트|agent|fde|forward deployed|머신러닝|딥러닝/i],
+  ["클라우드 · 인프라", /클라우드|cloud|인프라|시스템|네트워크|idc|데이터센터|서버|전산|it 운영|\bse\b/i],
+  ["백엔드 · 풀스택", /백엔드|풀스택|backend|full ?stack/i],
+  ["데이터", /데이터/i],
+];
+export const roleAreaNames = [...roleAreas.map(([name]) => name), "기타"];
+
+export function roleArea(job: Job): string {
+  const text = `${job.role ?? ""} ${job.title}`;
+  return roleAreas.find(([, re]) => re.test(text))?.[0] ?? "기타";
+}
+
+export function isClosed(deadline: string | null): boolean {
+  return deadline !== null && deadline < todayYmd();
+}
+
+// 목록에 보일 공고: 마감된 공고는 빼고, 지원 완료한 공고는 기록이라 마감이 지나도 남긴다
+export function visibleJobs(jobs: Job[]): Job[] {
+  return jobs.filter((j) => j.status === "applied" || !isClosed(j.deadline));
+}
+
+// 마감일 오름차순(임박한 마감이 위), 상시는 그 뒤, 마감이 지난 공고(지원 완료 기록)는 맨 뒤
 export function sortJobs(jobs: Job[]): Job[] {
-  return [...jobs].sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
+  const rank = (j: Job) => (isClosed(j.deadline) ? 2 : j.deadline === null ? 1 : 0);
+  return [...jobs].sort((a, b) => rank(a) - rank(b) || (a.deadline ?? "").localeCompare(b.deadline ?? ""));
 }
 
 // 링크로 그리는 값은 http(s)만 허용한다 (javascript: 같은 주소가 href에 들어가지 않게)

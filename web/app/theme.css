@@ -7,6 +7,8 @@
   --border: #dfe2e7;
   --text: #0b0d12;
   --muted: #525866;
+  /* 드롭다운 화살표(꺾쇠). data URI 안에서는 변수를 못 쓰므로 글자색을 직접 넣는다 */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230b0d12' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --accent: #13306e;
   --accent-text: #ffffff;
   --tag-bg: #eceef2;
@@ -29,6 +31,7 @@
     --border: #262a33;
     --text: #f1f2f5;
     --muted: #9ba1ad;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23f1f2f5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     --accent: #c3d4ff;
     --accent-text: #08090c;
     --tag-bg: #1d2028;

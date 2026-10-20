@@ -39,3 +39,20 @@ def test_job_rejects_unknown_status(sample_jobs):
     data = sample_jobs[0].model_dump(mode="json") | {"status": "maybe"}
     with pytest.raises(ValidationError):
         Job(**data)
+
+
+def test_job_accepts_role_career_salary(sample_jobs):
+    data = sample_jobs[0].model_dump(mode="json") | {
+        "role": "클라우드 엔지니어",
+        "career": "신입",
+        "salary": "약 6,330만 원 (국민연금 재직자 평균, 초봉 아님)",
+    }
+    job = Job(**data)
+    assert job.role == "클라우드 엔지니어" and job.salary.startswith("약")
+
+
+def test_job_rejects_long_salary_text(sample_jobs):
+    # 짧은 값만 받는다 (공고 본문 · 복지 같은 긴 글이 들어오지 않게)
+    data = sample_jobs[0].model_dump(mode="json") | {"salary": "가" * 81}
+    with pytest.raises(ValidationError):
+        Job(**data)
