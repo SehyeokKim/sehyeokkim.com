@@ -1,16 +1,19 @@
 import hmac
 import html
+from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from mangum import Mangum
 
 from app import auth
 from app.config import UNSET, Settings, get_settings
-from app.jobs import JobRepository, get_repository
+from app.jobs import ApplyRequest, JobRepository, get_repository
 
 # 문서 화면(/docs, /openapi.json)은 공개 주소에 노출하지 않는다
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+
+KST = timezone(timedelta(hours=9))
 
 AFTER_LOGIN = "/private/jobs/"
 LOGIN_FAILED = "/private/?error=login"
@@ -83,6 +86,25 @@ def me(_: dict = Depends(auth.require_session)):
 @app.get("/api/jobs")
 def list_jobs(_: dict = Depends(auth.require_session), repo: JobRepository = Depends(get_repository)):
     return {"items": [job.model_dump(mode="json") for job in repo.list_jobs()]}
+
+
+@app.patch("/api/jobs/{job_id}")
+def apply_job(
+    job_id: str,
+    body: ApplyRequest,
+    request: Request,
+    _: dict = Depends(auth.require_session),
+    settings: Settings = Depends(get_settings),
+    repo: JobRepository = Depends(get_repository),
+):
+    # 쓰기 요청은 사이트 화면에서 보낸 것만 받는다. 세션 쿠키가 SameSite=Strict라 이중 확인이다
+    # 실패는 401: CloudFront가 403 · 404를 404.html로 바꾸기 때문 (ADR 0008)
+    if request.headers.get("origin") != settings.site_url:
+        raise HTTPException(status_code=401, detail="unauthorized")
+    job = repo.mark_applied(job_id, body.applied_via, datetime.now(KST).date())
+    if job is None:
+        raise HTTPException(status_code=404, detail="not found")
+    return job.model_dump(mode="json")
 
 
 def _setup_page(sub: str) -> str:

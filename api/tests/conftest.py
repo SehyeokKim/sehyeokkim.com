@@ -34,6 +34,13 @@ class FakeRepository:
 
         return sorted(self.jobs, key=sort_key)
 
+    def mark_applied(self, job_id, applied_via, applied_at):
+        for i, job in enumerate(self.jobs):
+            if job.id == job_id:
+                self.jobs[i] = job.model_copy(update={"status": "applied", "applied_via": applied_via, "applied_at": applied_at})
+                return self.jobs[i]
+        return None
+
 
 @pytest.fixture
 def sample_jobs() -> list[Job]:

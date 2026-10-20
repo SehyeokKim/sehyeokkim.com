@@ -17,7 +17,8 @@ export default function JobsPage() {
       <header className="private-head">
         <p className="entry-card-label">PRIVATE AREA</p>
         <h1>공고 목록</h1>
-        <p className="private-lead">마감이 빠른 순서입니다. 공고 제목을 누르면 원문이 새 창으로 열립니다.</p>
+        <p className="private-lead">마감이 빠른 순서입니다. 공고를 누르면 상세 화면에서 지원 완료를 기록할 수 있습니다. &quot;예시&quot; 표시가 붙은
+          공고는 화면 구성을 보여 주는 가짜 데이터라 저장되지 않습니다.</p>
       </header>
       <JobsBoard />
     </main>
