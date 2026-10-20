@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
-type Job = {
+export type Job = {
   id: string;
   company: string;
   title: string;
@@ -38,6 +38,8 @@ function dday(deadline: string | null): string {
   return days === 0 ? "오늘 마감" : `D-${days}`;
 }
 
+const noSubscribe = () => () => {};
+
 // 세션이 없거나 만료됐으면 null (호출한 쪽이 /private로 돌려보낸다)
 async function fetchJobs(): Promise<State | null> {
   try {
@@ -50,9 +52,11 @@ async function fetchJobs(): Promise<State | null> {
   }
 }
 
-// 로그인한 본인의 공고 목록
-export default function JobsBoard() {
-  const [state, setState] = useState<State>({ kind: "loading" });
+// 로그인한 본인의 공고 목록. sampleJobs를 주면 API를 부르지 않고 그 가짜 데이터로 같은 화면을 그린다(/private/sample)
+export default function JobsBoard({ sampleJobs }: { sampleJobs?: Job[] }) {
+  const [state, setState] = useState<State>(sampleJobs ? { kind: "ready", jobs: sampleJobs } : { kind: "loading" });
+  // D-day는 오늘 날짜로 계산하므로 빌드 시점의 정적 HTML에는 목록을 넣지 않고 브라우저에서만 그린다
+  const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("all");
 
   const apply = useCallback((next: State | null) => {
@@ -61,8 +65,8 @@ export default function JobsBoard() {
   }, []);
 
   useEffect(() => {
-    fetchJobs().then(apply);
-  }, [apply]);
+    if (!sampleJobs) fetchJobs().then(apply);
+  }, [apply, sampleJobs]);
 
   function retry() {
     setState({ kind: "loading" });
@@ -91,9 +95,11 @@ export default function JobsBoard() {
             </button>
           ))}
         </div>
-        <button type="button" className="btn-ghost" onClick={logout}>
-          로그아웃
-        </button>
+        {!sampleJobs && (
+          <button type="button" className="btn-ghost" onClick={logout}>
+            로그아웃
+          </button>
+        )}
       </div>
 
       {state.kind === "loading" && (
@@ -119,7 +125,7 @@ export default function JobsBoard() {
         </p>
       )}
 
-      {jobs.length > 0 && (
+      {hydrated && jobs.length > 0 && (
         <ul className="jobs-list">
           {jobs.map((job) => (
             <li key={job.id} className="job">

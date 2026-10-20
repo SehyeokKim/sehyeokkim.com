@@ -19,7 +19,7 @@ const nodes: Node[] = [
   { x: 190, y: RB, w: 170, label: "적재 스크립트", sub: "형식 검사 · 미리보기", planned: true },
   { x: 400, y: RD, w: 170, label: "DynamoDB", sub: "최소 항목 · 마감 후 삭제" },
   { x: 620, y: RD, w: 170, label: "본인 검토", sub: "지원 후보로 승인 · 제외", planned: true },
-  { x: 10, y: RC, w: 150, label: "나", sub: "Google 로그인 · 본인만" },
+  { x: 10, y: RC, w: 150, label: "운영자", sub: "Google 로그인 · 허용 계정만" },
   { x: 190, y: RC, w: 170, label: "CloudFront", sub: "/api/* · 캐시 없음" },
   { x: 400, y: RC, w: 170, label: "API Gateway · Lambda", sub: "세션 확인 · 목록 조회" },
 ];
@@ -31,7 +31,7 @@ const edges: { d: string; planned?: boolean }[] = [
   { d: `M360,${mid(RB)} H380 V${mid(RD)} H400`, planned: true }, // 적재 스크립트 → DynamoDB
   { d: `M570,${RD + 18} H620`, planned: true }, // DynamoDB → 본인 검토 (새 공고)
   { d: `M620,${RD + 36} H570`, planned: true }, // 본인 검토 → DynamoDB (승인 결과)
-  { d: `M160,${mid(RC)} H190` }, // 나 → CloudFront
+  { d: `M160,${mid(RC)} H190` }, // 운영자 → CloudFront
   { d: `M360,${mid(RC)} H400` }, // CloudFront → API Gateway · Lambda
   { d: `M485,${RC} V${RD + H}` }, // API Gateway · Lambda → DynamoDB (조회)
 ];

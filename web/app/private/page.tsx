@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
 import LoginPanel from "@/app/components/LoginPanel";
 import PipelineDiagram from "@/app/components/PipelineDiagram";
+import { privateDataLegal } from "@/content/legal";
 
 export const metadata: Metadata = {
   title: "비공개 대시보드",
@@ -33,6 +35,10 @@ export default function PrivatePage() {
           저 혼자 보는 용도로만 만들었고, 수집한 공고는 외부에 공개하지 않습니다. 대신 어떤 기준으로 모으고 어떻게
           동작하는지를 아래에 정리했습니다.
         </p>
+        <div className="legal-line">
+          <LegalLink target="private-data-legal" label="법적 근거" />
+        </div>
+        <LegalPopover id="private-data-legal" title="공고 데이터를 공개하지 않는 이유" sections={privateDataLegal} />
       </section>
 
       <section className="private-section">
