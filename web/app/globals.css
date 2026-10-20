@@ -881,6 +881,12 @@ p {
   text-decoration: underline;
 }
 
+/* 문단 아래 줄로 따로 두는 법적 근거 링크 */
+.legal-line {
+  margin-top: 6px;
+  font-size: 0.9rem;
+}
+
 .legal {
   width: min(600px, calc(100vw - 32px));
   max-height: min(70vh, 640px);

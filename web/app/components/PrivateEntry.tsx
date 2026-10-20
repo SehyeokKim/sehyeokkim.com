@@ -1,11 +1,12 @@
 // 공개 이력서 → 비공개 대시보드(/private/) 입구.
 // EntryToc: 본인이 쓰는 입구(목차 맨 아래), EntrySiteCard: 채용 담당자에게 기능을 소개하는 카드(This Site 섹션)
-// 아직 디자인 단계라 로그인 · 샘플 데이터 기능은 없다
+// 샘플 데이터 버튼은 로그인 없이 가짜 공고로 같은 목록 화면을 보여 주는 /private/sample/로 간다
 
 import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
 import { privateDataLegal } from "@/content/legal";
 
 const PRIVATE_HREF = "/private/";
+const SAMPLE_HREF = "/private/sample/";
 
 // Lucide "lock" (ISC)
 function LockIcon() {
@@ -40,9 +41,11 @@ export function EntrySiteCard() {
         </h3>
         <p>
           외부 서비스에서 모은 데이터는 저작권 · 이용약관상 공개할 수 없어, Google 로그인으로 권한을 걸고 제 계정
-          1개에만 열어 두었습니다. 화면 구성은 샘플 데이터로 둘러볼 수 있습니다.{" "}
-          <LegalLink target="private-data-legal" label="공개하지 않는 이유 · 법적 근거" />
+          1개에만 열어 두었습니다. 화면 구성은 샘플 데이터로 둘러볼 수 있습니다.
         </p>
+        <div className="legal-line">
+          <LegalLink target="private-data-legal" label="법적 근거" />
+        </div>
         <ul className="entry-card-impl" aria-label="구현">
           <li>
             <strong>인증</strong> Google 로그인(OIDC), 허용 계정 ID 1개만 통과
@@ -62,7 +65,7 @@ export function EntrySiteCard() {
         <a href={PRIVATE_HREF} className="btn-primary">
           로그인
         </a>
-        <a href={PRIVATE_HREF} className="btn-ghost">
+        <a href={SAMPLE_HREF} className="btn-ghost">
           샘플 데이터로 둘러보기
         </a>
       </div>
