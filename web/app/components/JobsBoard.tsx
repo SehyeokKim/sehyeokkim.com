@@ -4,10 +4,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
   type Job,
+  type EmploymentFilter,
   type Fit,
   type JobStatus,
   LOGIN_EXPIRED,
   dday,
+  employmentFilters,
+  matchesEmployment,
+  roleArea,
+  roleAreaNames,
   fetchJobs,
   fitCriteria,
   fitLabel,
@@ -16,6 +21,7 @@ import {
   sortJobs,
   statusLabel,
   urlHost,
+  visibleJobs,
 } from "./jobs";
 import { sampleJobs } from "./sampleJobs";
 
@@ -32,15 +38,20 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
   const [live, setLive] = useState<State>({ kind: "loading" });
   const sampleList = useSyncExternalStore(sampleJobs.subscribe, sampleJobs.getSnapshot, sampleJobs.getServerSnapshot);
   // 실제 목록에도 예시 공고를 항상 함께 보여 준다 (내 공고가 없어도 화면 구성을 볼 수 있게)
-  const state: State = sample
+  const merged: State = sample
     ? { kind: "ready", jobs: sampleList }
     : live.kind === "ready"
-      ? { kind: "ready", jobs: sortJobs([...live.jobs, ...sampleList]) }
+      ? { kind: "ready", jobs: [...live.jobs, ...sampleList] }
       : live;
   // D-day는 오늘 날짜로 계산하므로 빌드 시점의 정적 HTML에는 목록을 넣지 않고 브라우저에서만 그린다
   const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
+  // 마감 여부와 정렬도 오늘 날짜에 달려 있어 브라우저에서만 적용한다 (빌드 때의 정적 HTML과 어긋나지 않게)
+  const state: State =
+    merged.kind === "ready" && hydrated ? { kind: "ready", jobs: sortJobs(visibleJobs(merged.jobs)) } : merged;
   const [filter, setFilter] = useState<(typeof filters)[number]>("all");
   const [fitFilter, setFitFilter] = useState<(typeof fitFilters)[number]>("all");
+  const [employment, setEmployment] = useState<EmploymentFilter | "all">("all");
+  const [area, setArea] = useState<string>("all");
   const detailHref = sample ? "/private/sample/detail/" : "/private/jobs/detail/";
 
   const load = useCallback(() => {
@@ -59,52 +70,72 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
     load();
   }
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => undefined);
-    window.location.replace("/private/");
-  }
-
   const jobs =
     state.kind === "ready"
-      ? state.jobs.filter((j) => (filter === "all" || j.status === filter) && (fitFilter === "all" || j.fit === fitFilter))
+      ? state.jobs.filter(
+          (j) =>
+            (filter === "all" || j.status === filter) &&
+            (fitFilter === "all" || j.fit === fitFilter) &&
+            (employment === "all" || matchesEmployment(j, employment)) &&
+            (area === "all" || roleArea(j) === area),
+        )
       : [];
 
   return (
     <>
       <div className="jobs-toolbar">
-        <div className="jobs-filters" role="group" aria-label="상태로 거르기">
-          {filters.map((f) => (
-            <button key={f} type="button" className="jobs-filter" aria-pressed={filter === f} onClick={() => setFilter(f)}>
-              {f === "all" ? "전체" : statusLabel[f]}
-              {state.kind === "ready" && (
-                <span className="jobs-count">
-                  {f === "all" ? state.jobs.length : state.jobs.filter((j) => j.status === f).length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-        {!sample && (
-          <button type="button" className="btn-ghost" onClick={logout}>
-            로그아웃
-          </button>
-        )}
-      </div>
-      <div className="jobs-filters jobs-fit-filters" role="group" aria-label="적합도로 거르기">
-        {fitFilters.map((f) => (
-          <button
-            key={f}
-            type="button"
-            className="jobs-filter"
-            aria-pressed={fitFilter === f}
-            onClick={() => setFitFilter(f)}
+        {/* 조건(상태 · 적합도 · 직무 분야 · 고용형태)은 모두 드롭다운으로 한 줄에 모은다 */}
+        <div className="jobs-subfilters">
+          <select
+            className="jobs-select"
+            aria-label="상태로 거르기"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as (typeof filters)[number])}
           >
-            {f === "all" ? "적합도 전체" : fitLabel[f]}
-            {state.kind === "ready" && f !== "all" && (
-              <span className="jobs-count">{state.jobs.filter((j) => j.fit === f).length}</span>
-            )}
-          </button>
-        ))}
+            {filters.map((f) => (
+              <option key={f} value={f}>
+                {`${f === "all" ? "상태 전체" : statusLabel[f]} (${
+                  state.kind === "ready" ? (f === "all" ? state.jobs : state.jobs.filter((j) => j.status === f)).length : 0
+                })`}
+              </option>
+            ))}
+          </select>
+          <select
+            className="jobs-select"
+            aria-label="적합도로 거르기"
+            value={fitFilter}
+            onChange={(e) => setFitFilter(e.target.value as (typeof fitFilters)[number])}
+          >
+            {fitFilters.map((f) => (
+              <option key={f} value={f}>
+                {f === "all"
+                  ? "적합도 전체"
+                  : `${fitLabel[f]} (${state.kind === "ready" ? state.jobs.filter((j) => j.fit === f).length : 0})`}
+              </option>
+            ))}
+          </select>
+          <select className="jobs-select" aria-label="직무 분야로 거르기" value={area} onChange={(e) => setArea(e.target.value)}>
+            <option value="all">직무 분야 전체</option>
+            {roleAreaNames.map((name) => (
+              <option key={name} value={name}>
+                {name} ({state.kind === "ready" ? state.jobs.filter((j) => roleArea(j) === name).length : 0})
+              </option>
+            ))}
+          </select>
+          <select
+            className="jobs-select"
+            aria-label="고용형태로 거르기"
+            value={employment}
+            onChange={(e) => setEmployment(e.target.value as EmploymentFilter | "all")}
+          >
+            <option value="all">고용형태 전체</option>
+            {[...employmentFilters, "미확인" as const].map((f) => (
+              <option key={f} value={f}>
+                {f} ({state.kind === "ready" ? state.jobs.filter((j) => matchesEmployment(j, f)).length : 0})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <details className="jobs-fit-legend">
         <summary>적합도 기준</summary>

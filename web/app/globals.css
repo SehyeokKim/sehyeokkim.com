@@ -1590,8 +1590,18 @@ p {
 }
 
 .private-head {
+  position: relative;
   padding-bottom: 28px;
   border-bottom: 1px solid var(--border);
+}
+
+/* 목록 머리글 오른쪽 위의 작은 로그아웃 */
+.private-logout {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 .private-head h1 {
@@ -1660,39 +1670,6 @@ p {
   margin: 24px 0 8px;
 }
 
-.jobs-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.jobs-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.88rem;
-  cursor: pointer;
-}
-
-.jobs-filter[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
-.jobs-count {
-  font-size: 0.8em;
-  opacity: 0.8;
-}
-
-.jobs-toolbar .btn-ghost,
 .jobs-message .btn-ghost {
   display: inline-flex;
   font: inherit;
@@ -1701,8 +1678,31 @@ p {
   cursor: pointer;
 }
 
-.jobs-fit-filters {
-  margin-bottom: 8px;
+/* 적합도 · 직무 분야 · 고용형태 드롭다운을 한 줄에, 좁으면 줄바꿈 */
+.jobs-subfilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 기본 화살표는 위치를 옮길 수 없어 직접 그린다: 기본보다 5px 글자 쪽(왼쪽), 색은 테마 글자색 */
+.jobs-select {
+  appearance: none;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 6px 34px 6px 12px;
+  background-image: var(--select-arrow);
+  background-position: calc(100% - 13px) 50%;
+  background-size: 10px 6px;
+  background-repeat: no-repeat;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
 }
 
 /* 적합도 기준: 눌러서 펼치는 범례 */

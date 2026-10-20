@@ -99,16 +99,44 @@ export function isSoon(deadline: string | null): boolean {
   return d.startsWith("D-") || d === "오늘 마감";
 }
 
-// 마감 전 공고는 마감이 빠른 순, 그다음 상시, 마감이 지난 공고는 맨 뒤 (늦게 지난 것부터)
+// 고용형태 필터: 값이 "정규직/인턴", "계약직(3개월 후 전환)"처럼 섞여 있어 포함 여부로 고른다
+export const employmentFilters = ["정규직", "인턴", "계약직"] as const;
+export type EmploymentFilter = (typeof employmentFilters)[number] | "미확인";
+
+export function matchesEmployment(job: Job, f: EmploymentFilter): boolean {
+  return f === "미확인" ? !job.employment_type : !!job.employment_type?.includes(f);
+}
+
+// 직무 분야 필터: 직무 값은 표현이 제각각이라 키워드로 몇 개 분야에 묶는다. 위에서부터 먼저 맞는 분야
+const roleAreas: [string, RegExp][] = [
+  ["DevOps · SRE · MLOps", /devops|sre|mlops|llmops|플랫폼 엔지니어/i],
+  ["보안", /보안|관제|cert|침해|악성/i],
+  ["AX · DX", /\bax\b|\bdx\b|ax ·|dx ·/i],
+  ["AI · 에이전트", /ai|llm|\bml\b|에이전트|agent|fde|forward deployed|머신러닝|딥러닝/i],
+  ["클라우드 · 인프라", /클라우드|cloud|인프라|시스템|네트워크|idc|데이터센터|서버|전산|it 운영|\bse\b/i],
+  ["백엔드 · 풀스택", /백엔드|풀스택|backend|full ?stack/i],
+  ["데이터", /데이터/i],
+];
+export const roleAreaNames = [...roleAreas.map(([name]) => name), "기타"];
+
+export function roleArea(job: Job): string {
+  const text = `${job.role ?? ""} ${job.title}`;
+  return roleAreas.find(([, re]) => re.test(text))?.[0] ?? "기타";
+}
+
+export function isClosed(deadline: string | null): boolean {
+  return deadline !== null && deadline < todayYmd();
+}
+
+// 목록에 보일 공고: 마감된 공고는 빼고, 지원 완료한 공고는 기록이라 마감이 지나도 남긴다
+export function visibleJobs(jobs: Job[]): Job[] {
+  return jobs.filter((j) => j.status === "applied" || !isClosed(j.deadline));
+}
+
+// 마감일 오름차순(임박한 마감이 위), 상시는 그 뒤, 마감이 지난 공고(지원 완료 기록)는 맨 뒤
 export function sortJobs(jobs: Job[]): Job[] {
-  const today = todayYmd();
-  const rank = (j: Job) => (j.deadline === null ? 1 : j.deadline < today ? 2 : 0);
-  return [...jobs].sort((a, b) => {
-    const r = rank(a) - rank(b);
-    if (r !== 0) return r;
-    if (rank(a) === 2) return b.deadline!.localeCompare(a.deadline!);
-    return (a.deadline ?? "").localeCompare(b.deadline ?? "");
-  });
+  const rank = (j: Job) => (isClosed(j.deadline) ? 2 : j.deadline === null ? 1 : 0);
+  return [...jobs].sort((a, b) => rank(a) - rank(b) || (a.deadline ?? "").localeCompare(b.deadline ?? ""));
 }
 
 // 링크로 그리는 값은 http(s)만 허용한다 (javascript: 같은 주소가 href에 들어가지 않게)
