@@ -1,76 +1,58 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-
-export type Job = {
-  id: string;
-  company: string;
-  title: string;
-  url: string;
-  deadline: string | null;
-  location: string | null;
-  employment_type: string | null;
-  source: string;
-  status: "new" | "candidate" | "applied" | "excluded";
-  fit: "high" | "mid" | "low" | null;
-  memo: string | null;
-  collected_at: string;
-};
+import {
+  type Job,
+  type JobStatus,
+  LOGIN_EXPIRED,
+  dday,
+  fetchJobs,
+  fitLabel,
+  isSoon,
+  statusClass,
+  sortJobs,
+  statusLabel,
+  urlHost,
+} from "./jobs";
+import { sampleJobs } from "./sampleJobs";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; jobs: Job[] };
 
-const statusLabel: Record<Job["status"], string> = {
-  candidate: "지원 후보",
-  new: "새 공고",
-  applied: "지원 완료",
-  excluded: "제외",
-};
-const statusClass: Record<Job["status"], string> = { candidate: "status signal", new: "status", applied: "status ok", excluded: "status" };
-const fitLabel: Record<NonNullable<Job["fit"]>, string> = { high: "적합도 상", mid: "적합도 중", low: "적합도 하" };
-const filters: (Job["status"] | "all")[] = ["all", "candidate", "new", "applied", "excluded"];
-
-function dday(deadline: string | null): string {
-  if (!deadline) return "상시";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const days = Math.round((new Date(`${deadline}T00:00:00`).getTime() - today.getTime()) / 86_400_000);
-  if (days < 0) return "마감";
-  return days === 0 ? "오늘 마감" : `D-${days}`;
-}
+const filters: (JobStatus | "all")[] = ["all", "candidate", "new", "applied", "excluded"];
 
 const noSubscribe = () => () => {};
 
-// 세션이 없거나 만료됐으면 null (호출한 쪽이 /private로 돌려보낸다)
-async function fetchJobs(): Promise<State | null> {
-  try {
-    const res = await fetch("/api/jobs", { credentials: "same-origin", cache: "no-store" });
-    if (res.status === 401) return null;
-    if (!res.ok) return { kind: "error" };
-    return { kind: "ready", jobs: (await res.json()).items };
-  } catch {
-    return { kind: "error" };
-  }
-}
-
-// 로그인한 본인의 공고 목록. sampleJobs를 주면 API를 부르지 않고 그 가짜 데이터로 같은 화면을 그린다(/private/sample)
-export default function JobsBoard({ sampleJobs }: { sampleJobs?: Job[] }) {
-  const [state, setState] = useState<State>(sampleJobs ? { kind: "ready", jobs: sampleJobs } : { kind: "loading" });
+// 로그인한 본인의 공고 목록 + 예시 공고(sampleJobs). sample이면 API를 부르지 않고 예시 공고만 그린다.
+// 공고를 누르면 상세 페이지(?id=)로 간다. 정적 사이트라 공고별 페이지를 빌드 때 만들 수 없기 때문
+export default function JobsBoard({ sample = false }: { sample?: boolean }) {
+  const [live, setLive] = useState<State>({ kind: "loading" });
+  const sampleList = useSyncExternalStore(sampleJobs.subscribe, sampleJobs.getSnapshot, sampleJobs.getServerSnapshot);
+  // 실제 목록에도 예시 공고를 항상 함께 보여 준다 (내 공고가 없어도 화면 구성을 볼 수 있게)
+  const state: State = sample
+    ? { kind: "ready", jobs: sampleList }
+    : live.kind === "ready"
+      ? { kind: "ready", jobs: sortJobs([...live.jobs, ...sampleList]) }
+      : live;
   // D-day는 오늘 날짜로 계산하므로 빌드 시점의 정적 HTML에는 목록을 넣지 않고 브라우저에서만 그린다
   const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("all");
+  const detailHref = sample ? "/private/sample/detail/" : "/private/jobs/detail/";
 
-  const apply = useCallback((next: State | null) => {
-    if (next) setState(next);
-    else window.location.replace("/private/?error=expired");
+  const load = useCallback(() => {
+    fetchJobs().then((result) => {
+      if (result === "expired") window.location.replace(LOGIN_EXPIRED);
+      else setLive(result === "error" ? { kind: "error" } : { kind: "ready", jobs: result });
+    });
   }, []);
 
   useEffect(() => {
-    if (!sampleJobs) fetchJobs().then(apply);
-  }, [apply, sampleJobs]);
+    if (!sample) load();
+  }, [load, sample]);
 
   function retry() {
-    setState({ kind: "loading" });
-    fetchJobs().then(apply);
+    setLive({ kind: "loading" });
+    load();
   }
 
   async function logout() {
@@ -95,7 +77,7 @@ export default function JobsBoard({ sampleJobs }: { sampleJobs?: Job[] }) {
             </button>
           ))}
         </div>
-        {!sampleJobs && (
+        {!sample && (
           <button type="button" className="btn-ghost" onClick={logout}>
             로그아웃
           </button>
@@ -129,22 +111,25 @@ export default function JobsBoard({ sampleJobs }: { sampleJobs?: Job[] }) {
         <ul className="jobs-list">
           {jobs.map((job) => (
             <li key={job.id} className="job">
-              <span className={`job-dday${dday(job.deadline).startsWith("D-") || dday(job.deadline) === "오늘 마감" ? " soon" : ""}`}>
-                {dday(job.deadline)}
-              </span>
+              <span className={isSoon(job.deadline) ? "job-dday soon" : "job-dday"}>{dday(job.deadline)}</span>
               <div className="job-main">
-                <a href={job.url} target="_blank" rel="noopener noreferrer" className="job-title">
-                  {job.title} ↗
-                </a>
-                <p className="job-meta">
-                  <strong>{job.company}</strong>
-                  {[job.location, job.employment_type, job.deadline && `${job.deadline} 마감`].filter(Boolean).map((v) => (
-                    <span key={v as string}> · {v}</span>
-                  ))}
-                </p>
+                <Link href={`${detailHref}?id=${encodeURIComponent(job.id)}`} className="job-open">
+                  <span className="job-title">
+                    {job.title} <span aria-hidden="true">›</span>
+                  </span>
+                  <span className="job-meta">
+                    <strong>{job.company}</strong>
+                    {[urlHost(job.url), job.location, job.employment_type, job.deadline && `${job.deadline} 마감`]
+                      .filter(Boolean)
+                      .map((v) => (
+                        <span key={v as string}> · {v}</span>
+                      ))}
+                  </span>
+                </Link>
                 {job.memo && <p className="job-memo">{job.memo}</p>}
               </div>
               <div className="job-tags">
+                {job.example && !sample && <span className="status">예시</span>}
                 <span className={statusClass[job.status]}>{statusLabel[job.status]}</span>
                 {job.fit && <span className="status">{fitLabel[job.fit]}</span>}
               </div>

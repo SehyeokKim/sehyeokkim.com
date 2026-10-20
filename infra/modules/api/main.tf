@@ -61,10 +61,16 @@ data "aws_iam_policy_document" "lambda" {
     resources = ["${aws_cloudwatch_log_group.lambda.arn}:*"]
   }
 
-  # 지금은 목록 조회만 한다. 쓰기는 사람이 로컬 SSO로 적재 스크립트를 실행할 때만
+  # 목록 조회와 지원 상태 변경(UpdateItem)만 한다. 공고 추가 · 삭제는 사람이 로컬 SSO로 적재 스크립트를 실행할 때만
   statement {
     sid       = "ReadJobs"
     actions   = ["dynamodb:Scan", "dynamodb:GetItem", "dynamodb:Query"]
+    resources = [aws_dynamodb_table.jobs.arn]
+  }
+
+  statement {
+    sid       = "UpdateJobStatus"
+    actions   = ["dynamodb:UpdateItem"]
     resources = [aws_dynamodb_table.jobs.arn]
   }
 

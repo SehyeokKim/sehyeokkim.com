@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SampleJobsBoard from "./SampleJobsBoard";
+import JobsBoard from "@/app/components/JobsBoard";
 
 export const metadata: Metadata = {
   title: "공고 목록 샘플",
@@ -18,11 +18,11 @@ export default function SamplePage() {
         <p className="entry-card-label">SAMPLE DATA</p>
         <h1>공고 목록</h1>
         <p className="private-lead">
-          로그인한 화면과 같은 구성을 가짜 데이터로 보여 줍니다. 회사와 공고는 실제가 아니고, 링크는 example.com으로
-          연결됩니다.
+          로그인한 화면과 같은 구성을 가짜 데이터로 보여 줍니다. 회사와 공고는 실제가 아니고, 링크는 예시용 도메인(example.com ·
+          example.net)으로 연결됩니다. 공고를 누르면 상세 화면으로 이동합니다.
         </p>
       </header>
-      <SampleJobsBoard />
+      <JobsBoard sample />
     </main>
   );
 }

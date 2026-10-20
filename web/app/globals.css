@@ -1756,6 +1756,146 @@ p {
   gap: 4px;
 }
 
+/* 공고 요약 줄 전체가 상세를 여는 버튼 · 링크 */
+.job-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.job-open:hover {
+  text-decoration: none;
+}
+
+.job-open:hover .job-title {
+  text-decoration: underline;
+}
+
+.job-open .job-title,
+.job-open .job-meta {
+  display: block;
+}
+
+/* 공고 상세 페이지 */
+.job-detail-page {
+  padding-top: 24px;
+}
+
+.job-fields {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.job-fields > div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.job-fields dt {
+  color: var(--muted);
+}
+
+.job-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.job-apply {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+
+.job-apply-label {
+  color: var(--muted);
+}
+
+.job-apply-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-apply .btn-primary,
+.job-apply .btn-ghost {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.job-apply .btn-primary {
+  border: none;
+}
+
+.job-channel-toggle {
+  background: var(--bg);
+}
+
+/* 지원 경로 목록: 사이트 이름 + 도메인 칸을 눌러 고른다 */
+.job-channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job-channel {
+  display: grid;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.job-channel:hover {
+  border-color: var(--accent);
+}
+
+.job-channel[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.job-channel-domain {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.job-apply .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.job-apply-error {
+  margin: 0;
+  color: var(--signal-text);
+}
+
+.job-sample-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 @media (max-width: 560px) {
   .job {
     grid-template-columns: minmax(0, 1fr);

@@ -68,7 +68,7 @@ docs/         아키텍처 문서, API 명세(api.md), ADR(설계 결정 기록)
 - **SSO + MFA**: 사람은 IAM Identity Center로만 접근합니다. IAM 사용자와 장기 액세스 키는 0개입니다.
 - **루트 사용자**: MFA를 등록하고 일상 작업에는 쓰지 않습니다.
 - **배포**: 인프라 변경은 PR에서 plan을 확인한 뒤 SSO로 직접 적용하고, GitHub Actions는 웹 파일만 배포합니다. 배포 역할은 OIDC 임시 자격 증명으로 `main` 브랜치의 `production` 환경에서만 맡을 수 있고, 사이트 버킷 파일 쓰기와 CloudFront 캐시 무효화 외에는 권한이 없습니다.
-- **비공개 영역**: Google OIDC 로그인에서 state · PKCE · nonce를 검증하고 ID 토큰 서명을 확인합니다. 세션은 httpOnly · Secure · SameSite=Strict 쿠키로, 브라우저를 끄면 끝나고 활동이 있어도 12시간이 지나면 다시 로그인합니다. API 응답은 캐시하지 않고, API Gateway에 요청 수 제한을 둡니다. Lambda 실행 역할은 권한 상한선 안에서 공고 테이블 읽기와 비밀값 읽기만 합니다.
+- **비공개 영역**: Google OIDC 로그인에서 state · PKCE · nonce를 검증하고 ID 토큰 서명을 확인합니다. 세션은 httpOnly · Secure · SameSite=Strict 쿠키로, 브라우저를 끄면 끝나고 활동이 있어도 12시간이 지나면 다시 로그인합니다. API 응답은 캐시하지 않고, API Gateway에 요청 수 제한을 둡니다. Lambda 실행 역할은 권한 상한선 안에서 공고 테이블 읽기 · 지원 상태 변경과 비밀값 읽기만 합니다. 상태를 바꾸는 요청은 세션과 함께 `Origin`이 사이트 주소인지도 확인합니다.
 - **계정 안전장치**: 계정 전체 S3 퍼블릭 차단과 IAM Access Analyzer(외부 공유 감지)를 켰습니다.
 - **의존성**: GitHub Action은 커밋 SHA로 고정하고, Dependabot이 주 1회 업데이트 PR을 만듭니다(메이저 업데이트는 분리). 취약점이 공개된 의존성은 바로 PR로 받습니다.
 

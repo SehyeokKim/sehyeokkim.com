@@ -53,8 +53,28 @@
 | `fit` | `high` · `mid` · `low` 또는 `null` | 적합도 (사람이 정하거나 검토한 값) |
 | `memo` | 문자열 또는 `null` | 본인 메모 |
 | `collected_at` | `YYYY-MM-DD` | 수집일 |
+| `applied_at` | `YYYY-MM-DD` 또는 `null` | 지원일. 지원 완료로 바꿀 때 서버가 오늘 날짜(KST)로 기록 |
+| `applied_via` | 문자열 또는 `null` | 지원 경로. 공고 원문의 도메인(예: `jobs.example.com`) 또는 `company`(회사 채용 페이지) |
 
 저장하지 않는 것: 공고 본문, 리뷰 원문, 채용 담당자 개인정보.
+
+### `PATCH /api/jobs/{id}`
+
+공고를 지원 완료로 바꾸고 지원 경로를 남긴다. 지금은 지원 완료만 받는다.
+
+```json
+{ "status": "applied", "applied_via": "jobs.example.com" }
+```
+
+| 응답 | 경우 |
+|---|---|
+| `200` + 바뀐 공고 (`GET /api/jobs`의 항목과 같은 형식) | 성공 |
+| `401` | 세션이 없거나 만료됨, 또는 `Origin`이 사이트 주소(`https://sehyeokkim.com`)가 아님 |
+| `404` | 없는 공고 (새로 만들지 않음) |
+| `422` | `status`가 `applied`가 아니거나, `applied_via`가 도메인 · `company` 형식이 아니거나, 다른 필드가 있음 |
+
+- 화면의 지원 경로 선택지는 목록에 있는 공고들의 원문 도메인 + `company`다. 사이트 목록을 코드에 두지 않는다.
+- 바꾸는 속성은 `status`, `applied_at`, `applied_via`뿐이다. DynamoDB `UpdateItem`에 `attribute_exists(id)` 조건을 걸어 없는 공고는 만들지 않는다.
 
 ## DynamoDB
 
