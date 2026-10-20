@@ -25,13 +25,13 @@ export default function JobDetailScreen({ sample = false }: { sample?: boolean }
     });
   }, [sample]);
 
-  // 실제 화면은 내 공고 + 예시 공고 (목록과 같다)
-  const jobs = sample ? sampleList : Array.isArray(live) ? [...live, ...sampleList] : null;
+  // 실제 화면은 내 공고만, 샘플 화면은 예시 공고만 (목록과 같다)
+  const jobs = sample ? sampleList : Array.isArray(live) ? live : null;
   const job = id && jobs ? jobs.find((j) => j.id === id) : undefined;
 
   async function markApplied(appliedVia: string): Promise<boolean> {
     if (!job) return false;
-    if (job.example) {
+    if (sample) {
       sampleJobs.update(job.id, { status: "applied", applied_at: todayYmd(), applied_via: appliedVia });
       return true;
     }
@@ -69,9 +69,8 @@ export default function JobDetailScreen({ sample = false }: { sample?: boolean }
           <div className="job-detail-page">
             <JobDetail
               job={job}
-              // 예시 공고는 예시 도메인끼리, 내 공고는 내 공고 도메인끼리 고른다
-              channels={channelOptions(job.example || !Array.isArray(live) ? sampleList : live)}
-              sample={!!job.example}
+              channels={channelOptions(jobs)}
+              sample={sample}
               onApply={markApplied}
             />
           </div>

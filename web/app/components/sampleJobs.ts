@@ -1,4 +1,4 @@
-// 예시 공고(가짜 데이터). 샘플 화면(/private/sample)에서는 이것만, 로그인한 실제 목록에서는 내 공고와 함께 "예시"로 보인다.
+// 예시 공고(가짜 데이터). 샘플 화면(/private/sample)에서만 쓰고, 로그인한 실제 목록에는 섞지 않는다.
 // 브라우저 메모리에만 두므로 상태를 바꿔도 저장되지 않고,
 // 페이지를 새로고침하면 처음으로 돌아간다. 화면 사이를 오갈 때(Next.js Link)는 바꾼 상태가 유지된다.
 import sampleData from "../../../data/sample/jobs.json";
@@ -29,7 +29,7 @@ function shiftToToday(jobs: Job[]): Job[] {
   }));
 }
 
-const initial = sortJobs((sampleData as Job[]).map((j) => ({ ...j, example: true })));
+const initial = sortJobs(sampleData as Job[]);
 let current: Job[] | null = null;
 const listeners = new Set<() => void>();
 
