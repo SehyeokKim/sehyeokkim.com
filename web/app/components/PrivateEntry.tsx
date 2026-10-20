@@ -2,6 +2,9 @@
 // EntryToc: 본인이 쓰는 입구(목차 맨 아래), EntrySiteCard: 채용 담당자에게 기능을 소개하는 카드(This Site 섹션)
 // 아직 디자인 단계라 로그인 · 샘플 데이터 기능은 없다
 
+import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
+import { privateDataLegal } from "@/content/legal";
+
 const PRIVATE_HREF = "/private/";
 
 // Lucide "lock" (ISC)
@@ -37,7 +40,8 @@ export function EntrySiteCard() {
         </h3>
         <p>
           외부 서비스에서 모은 데이터는 저작권 · 이용약관상 공개할 수 없어, Google 로그인으로 권한을 걸고 제 계정
-          1개에만 열어 두었습니다. 화면 구성은 샘플 데이터로 둘러볼 수 있습니다.
+          1개에만 열어 두었습니다. 화면 구성은 샘플 데이터로 둘러볼 수 있습니다.{" "}
+          <LegalLink target="private-data-legal" label="공개하지 않는 이유 · 법적 근거" />
         </p>
         <ul className="entry-card-impl" aria-label="구현">
           <li>
@@ -62,6 +66,7 @@ export function EntrySiteCard() {
           샘플 데이터로 둘러보기
         </a>
       </div>
+      <LegalPopover id="private-data-legal" title="공고 데이터를 공개하지 않는 이유" sections={privateDataLegal} />
     </div>
   );
 }

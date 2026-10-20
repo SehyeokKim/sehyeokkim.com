@@ -1,10 +1,18 @@
 import type { LegalSection } from "@/content/legal";
 
 // 법적 고지 링크 + 작은 창. 브라우저 기본 popover라 스크립트 없이 열리고, Esc · 바깥 클릭으로 닫힌다
-export function LegalLink({ target, id }: { target: string; id?: string }) {
+export function LegalLink({
+  target,
+  id,
+  label = "법적 고지 · 라이선스",
+}: {
+  target: string;
+  id?: string;
+  label?: string;
+}) {
   return (
     <button id={id} type="button" className="text-link" popoverTarget={target}>
-      법적 고지 · 라이선스 ↗
+      {label} ↗
     </button>
   );
 }

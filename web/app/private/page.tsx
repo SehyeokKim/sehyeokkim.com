@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
 import LoginPanel from "@/app/components/LoginPanel";
 import PipelineDiagram from "@/app/components/PipelineDiagram";
+import { privateDataLegal } from "@/content/legal";
 
 export const metadata: Metadata = {
   title: "비공개 대시보드",
@@ -31,8 +33,10 @@ export default function PrivatePage() {
           공고 내용은 각 채용 사이트의 이용약관과 저작권법의 데이터베이스 보호를 받습니다. 대부분의 사이트는 서비스에서
           얻은 정보를 허락 없이 복제하거나 다른 곳에 다시 게시하는 것을 금지합니다. 그래서 이 화면은 개인적 이용 범위에서
           저 혼자 보는 용도로만 만들었고, 수집한 공고는 외부에 공개하지 않습니다. 대신 어떤 기준으로 모으고 어떻게
-          동작하는지를 아래에 정리했습니다.
+          동작하는지를 아래에 정리했습니다.{" "}
+          <LegalLink target="private-data-legal" label="공개하지 않는 이유 · 법적 근거" />
         </p>
+        <LegalPopover id="private-data-legal" title="공고 데이터를 공개하지 않는 이유" sections={privateDataLegal} />
       </section>
 
       <section className="private-section">
