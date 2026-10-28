@@ -119,7 +119,7 @@ const roleAreas: [string, RegExp][] = [
   // SA 경로를 맨 앞에 둔다: "Security SA", "AI FDE"처럼 보안 · AI 단어가 같이 있어도 SA 경로로 묶이게
   [
     "SA · 프리세일즈 · 기술영업",
-    /프리세일즈|pre-?sales|솔루션 ?아키텍|solutions? architect|\bsa\b|\bfde\b|forward deploy|기술 ?영업|sales engineer|technical sales|솔루션 ?컨설|클라우드 ?(컨설팅 ?)?(영업|세일즈|컨설)|cloud sales|\bta\b|technical architect/i,
+    /프리세일즈|pre-?sales|솔루션 ?아키텍|solutions? architect|\bsa\b|\bfde\b|forward deploy|기술 ?영업|sales engineer|technical sales|솔루션 ?컨설|클라우드 ?(컨설팅 ?)?(영업|세일즈|컨설)|cloud sales|(솔루션|saas|ai|it|b2b) ?(영업|세일즈)|deployment strategist|\bta\b|technical architect/i,
   ],
   ["DevOps · SRE · MLOps", /devops|sre|mlops|llmops|플랫폼 엔지니어/i],
   ["보안", /보안|관제|cert|침해|악성/i],
