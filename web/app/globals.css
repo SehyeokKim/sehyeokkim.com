@@ -1705,6 +1705,86 @@ p {
   cursor: pointer;
 }
 
+/* 여러 개 고르는 필터: 버튼은 .jobs-select와 같은 모양, 누르면 아래에 체크박스 목록 */
+.jobs-multi {
+  position: relative;
+}
+
+.jobs-multi .jobs-select {
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* 하나라도 고르면 테두리를 강조색으로 바꿔 걸려 있는 조건을 알 수 있게 한다 */
+.jobs-select.is-active {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.jobs-multi-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.jobs-multi-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.jobs-multi-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.jobs-multi-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-multi-clear {
+  min-height: 40px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.jobs-multi-clear:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .jobs-multi-option:hover {
+    background: var(--surface);
+  }
+}
+
 /* 적합도 기준: 눌러서 펼치는 범례 */
 .jobs-fit-legend {
   margin-bottom: 8px;
