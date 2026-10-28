@@ -56,5 +56,19 @@
     "collected_at": "2026-10-15",
     "applied_at": "2026-10-18",
     "applied_via": "company"
+  },
+  {
+    "id": "sample-005",
+    "company": "예시클라우드",
+    "title": "클라우드 프리세일즈 신입",
+    "url": "https://jobs.example.com/005",
+    "deadline": null,
+    "location": "서울",
+    "employment_type": "정규직",
+    "source": "manual",
+    "status": "candidate",
+    "fit": "high",
+    "memo": "SA 경로: 제안서 · 데모 · PoC",
+    "collected_at": "2026-10-19"
   }
 ]

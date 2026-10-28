@@ -64,15 +64,24 @@ export const statusClass: Record<JobStatus, string> = {
 export const fitLabel: Record<NonNullable<Job["fit"]>, string> = { high: "적합도 상", mid: "적합도 중", low: "적합도 하" };
 export type Fit = NonNullable<Job["fit"]>;
 
-// 적합도는 사람이 이 기준으로 매긴다. 목록 위 범례로 보여 준다
+// 적합도는 사람이 이 기준으로 매긴다. 목록 위 범례로 보여 준다.
+// 희망 직무(엔지니어 트랙)와 장기 목표인 SA 경로(고객 대면 기술 직무)를 같은 무게로 본다
 export const fitCriteria: { fit: Fit; label: string; text: string }[] = [
   {
     fit: "high",
     label: "상",
-    text: "희망 직무의 핵심(AI 서비스 백엔드 · 에이전트 · AI 인프라 · 클라우드 · DevOps)이고, Python · Docker · AWS · LLM 요건이 경험과 직접 맞으며, 신입 지원이 가능하고 걸리는 필수 자격이 없음",
+    text: "신입 지원이 가능하고 걸리는 필수 자격이 없으며, 둘 중 하나에 해당: ① 엔지니어 트랙 — 희망 직무의 핵심(AI 서비스 백엔드 · 에이전트 · AI 인프라 · 클라우드 · DevOps)이고 Python · Docker · AWS · LLM 요건이 경험과 직접 맞음 ② SA 경로 — 프리세일즈 · 솔루션 아키텍트 · FDE · 클라우드 기술영업/컨설팅처럼 고객 대면 기술 직무이고, 클라우드 · AI · 보안 기술 기반과 직결됨",
   },
-  { fit: "mid", label: "중", text: "직무는 맞지만 스택 · 요건이 일부만 맞거나, 상세 요건을 확인하지 못함" },
-  { fit: "low", label: "하", text: "희망 직무와 거리가 있거나, 경력 · 학위 요건이 걸리거나, 체험형 인턴" },
+  {
+    fit: "mid",
+    label: "중",
+    text: "직무는 맞지만 스택 · 요건이 일부만 맞거나, 상세 요건을 확인하지 못함. SA 경로라도 기술 기반이 다르거나(협업툴 · VoIP 등) 판매 영업 비중이 큰 경우",
+  },
+  {
+    fit: "low",
+    label: "하",
+    text: "희망 직무와 거리가 있거나, 경력 · 학위 요건이 걸리거나, 체험형 인턴. 기술 설계 없는 판매 영업 · 장비(HW) 기술영업",
+  },
 ];
 
 export const sourceLabel: Record<string, string> = { manual: "직접 추가" };
@@ -107,10 +116,15 @@ export function matchesEmployment(job: Job, f: EmploymentFilter): boolean {
 
 // 직무 분야 필터: 직무 값은 표현이 제각각이라 키워드로 몇 개 분야에 묶는다. 위에서부터 먼저 맞는 분야
 const roleAreas: [string, RegExp][] = [
+  // SA 경로를 맨 앞에 둔다: "Security SA", "AI FDE"처럼 보안 · AI 단어가 같이 있어도 SA 경로로 묶이게
+  [
+    "SA · 프리세일즈 · 기술영업",
+    /프리세일즈|pre-?sales|솔루션 ?아키텍|solutions? architect|\bsa\b|\bfde\b|forward deploy|기술 ?영업|sales engineer|technical sales|솔루션 ?컨설|클라우드 ?(컨설팅 ?)?(영업|세일즈|컨설)|cloud sales|\bta\b|technical architect/i,
+  ],
   ["DevOps · SRE · MLOps", /devops|sre|mlops|llmops|플랫폼 엔지니어/i],
   ["보안", /보안|관제|cert|침해|악성/i],
   ["AX · DX", /\bax\b|\bdx\b|ax ·|dx ·/i],
-  ["AI · 에이전트", /ai|llm|\bml\b|에이전트|agent|fde|forward deployed|머신러닝|딥러닝/i],
+  ["AI · 에이전트", /ai|llm|\bml\b|에이전트|agent|머신러닝|딥러닝/i],
   ["클라우드 · 인프라", /클라우드|cloud|인프라|시스템|네트워크|idc|데이터센터|서버|전산|it 운영|\bse\b/i],
   ["백엔드 · 풀스택", /백엔드|풀스택|backend|full ?stack/i],
   ["데이터", /데이터/i],

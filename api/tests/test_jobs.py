@@ -26,7 +26,7 @@ def test_dynamo_repository_reads_all_pages_and_sorts(sample_jobs):
     jobs = repo.list_jobs()
     assert len(repo.table.calls) == 2
     assert repo.table.calls[1]["ExclusiveStartKey"] == {"id": items[1]["id"]}
-    assert [str(j.deadline) if j.deadline else None for j in jobs] == ["2026-10-22", "2026-10-24", "2026-10-31", None]
+    assert [str(j.deadline) if j.deadline else None for j in jobs] == ["2026-10-22", "2026-10-24", "2026-10-31", None, None]
 
 
 def test_job_rejects_fields_outside_the_allowed_set(sample_jobs):

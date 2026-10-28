@@ -70,7 +70,7 @@ export default function PrivatePage() {
             페이지만 조회합니다.
           </li>
           <li>
-            <strong>정리</strong> 같은 공고를 묶고 희망 직무 · 지역 키워드로 거른 뒤 &quot;새 공고&quot;로 저장합니다.
+            <strong>정리</strong> 같은 공고를 묶고 희망 직무(엔지니어 트랙 · SA 경로) · 지역 키워드로 거른 뒤 &quot;새 공고&quot;로 저장합니다.
             직접 정리한 목록은 적재 스크립트가 형식을 검사하고 바뀌는 내용을 보여 준 뒤, 승인해야 저장합니다.
           </li>
           <li>
