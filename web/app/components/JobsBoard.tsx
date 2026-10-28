@@ -24,23 +24,26 @@ import {
   urlHost,
   visibleJobs,
 } from "./jobs";
+import MultiSelect from "./MultiSelect";
 import { sampleJobs } from "./sampleJobs";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; jobs: Job[] };
 
-const filters: (JobStatus | "all")[] = ["all", "candidate", "new", "applied", "excluded"];
-const fitFilters: (Fit | "all")[] = ["all", "high", "mid", "low"];
+const statuses: JobStatus[] = ["candidate", "new", "applied", "excluded"];
+const fits: Fit[] = ["high", "mid", "low"];
+const employments: EmploymentFilter[] = [...employmentFilters, "미확인"];
 
 const noSubscribe = () => () => {};
 
+// 조건마다 여러 값을 고를 수 있다. 빈 배열 = 전체. 같은 조건 안은 "또는", 조건끼리는 "그리고"
 type View = {
-  filter: (typeof filters)[number];
-  fitFilter: (typeof fitFilters)[number];
-  employment: EmploymentFilter | "all";
-  area: string;
+  filter: JobStatus[];
+  fitFilter: Fit[];
+  employment: EmploymentFilter[];
+  area: string[];
   scrollY: number | null;
 };
-const initialView = (): View => ({ filter: "all", fitFilter: "all", employment: "all", area: "all", scrollY: null });
+const initialView = (): View => ({ filter: [], fitFilter: [], employment: [], area: [], scrollY: null });
 // 상세에 들어갔다 돌아와도 필터와 스크롤 위치가 그대로이게 모듈 메모리에 둔다 (새로고침하면 처음으로)
 const views: Record<"live" | "sample", View> = { live: initialView(), sample: initialView() };
 
@@ -94,71 +97,53 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
     load();
   }
 
+  // 선택지 옆 숫자: 다른 조건과 관계없이 그 값에 해당하는 공고 수
+  const count = (pred: (j: Job) => boolean) => (state.kind === "ready" ? state.jobs.filter(pred).length : 0);
+
   const jobs =
     state.kind === "ready"
       ? state.jobs.filter(
           (j) =>
-            (filter === "all" || j.status === filter) &&
-            (fitFilter === "all" || j.fit === fitFilter) &&
-            (employment === "all" || matchesEmployment(j, employment)) &&
-            (area === "all" || roleArea(j) === area),
+            (filter.length === 0 || filter.includes(j.status)) &&
+            (fitFilter.length === 0 || (j.fit !== null && fitFilter.includes(j.fit))) &&
+            (employment.length === 0 || employment.some((f) => matchesEmployment(j, f))) &&
+            (area.length === 0 || area.includes(roleArea(j))),
         )
       : [];
 
   return (
     <>
       <div className="jobs-toolbar">
-        {/* 조건(상태 · 적합도 · 직무 분야 · 고용형태)은 모두 드롭다운으로 한 줄에 모은다 */}
+        {/* 조건(상태 · 적합도 · 직무 분야 · 고용형태)은 모두 드롭다운으로 한 줄에 모은다. 조건마다 여러 개를 고를 수 있다 */}
         <div className="jobs-subfilters">
-          <select
-            className="jobs-select"
-            aria-label="상태로 거르기"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as (typeof filters)[number])}
-          >
-            {filters.map((f) => (
-              <option key={f} value={f}>
-                {`${f === "all" ? "상태 전체" : statusLabel[f]} (${
-                  state.kind === "ready" ? (f === "all" ? state.jobs : state.jobs.filter((j) => j.status === f)).length : 0
-                })`}
-              </option>
-            ))}
-          </select>
-          <select
-            className="jobs-select"
-            aria-label="적합도로 거르기"
-            value={fitFilter}
-            onChange={(e) => setFitFilter(e.target.value as (typeof fitFilters)[number])}
-          >
-            {fitFilters.map((f) => (
-              <option key={f} value={f}>
-                {f === "all"
-                  ? "적합도 전체"
-                  : `${fitLabel[f]} (${state.kind === "ready" ? state.jobs.filter((j) => j.fit === f).length : 0})`}
-              </option>
-            ))}
-          </select>
-          <select className="jobs-select" aria-label="직무 분야로 거르기" value={area} onChange={(e) => setArea(e.target.value)}>
-            <option value="all">직무 분야 전체</option>
-            {roleAreaNames.map((name) => (
-              <option key={name} value={name}>
-                {name} ({state.kind === "ready" ? state.jobs.filter((j) => roleArea(j) === name).length : 0})
-              </option>
-            ))}
-          </select>
-          <select
-            className="jobs-select"
-            aria-label="고용형태로 거르기"
-            value={employment}
-            onChange={(e) => setEmployment(e.target.value as EmploymentFilter | "all")}
-          >
-            <option value="all">고용형태 전체</option>
-            {[...employmentFilters, "미확인" as const].map((f) => (
-              <option key={f} value={f}>
-                {f} ({state.kind === "ready" ? state.jobs.filter((j) => matchesEmployment(j, f)).length : 0})
-              </option>
-            ))}
-          </select>
+          <MultiSelect
+            label="상태로 거르기"
+            allLabel="상태 전체"
+            options={statuses.map((f) => ({ value: f, label: statusLabel[f], count: count((j) => j.status === f) }))}
+            selected={filter}
+            onChange={setFilter}
+          />
+          <MultiSelect
+            label="적합도로 거르기"
+            allLabel="적합도 전체"
+            options={fits.map((f) => ({ value: f, label: fitLabel[f], count: count((j) => j.fit === f) }))}
+            selected={fitFilter}
+            onChange={setFitFilter}
+          />
+          <MultiSelect
+            label="직무 분야로 거르기"
+            allLabel="직무 분야 전체"
+            options={roleAreaNames.map((name) => ({ value: name, label: name, count: count((j) => roleArea(j) === name) }))}
+            selected={area}
+            onChange={setArea}
+          />
+          <MultiSelect
+            label="고용형태로 거르기"
+            allLabel="고용형태 전체"
+            options={employments.map((f) => ({ value: f, label: f, count: count((j) => matchesEmployment(j, f)) }))}
+            selected={employment}
+            onChange={setEmployment}
+          />
         </div>
       </div>
       <details className="jobs-fit-legend">
@@ -192,7 +177,7 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
         <p className="jobs-message">
           {state.jobs.length === 0
             ? "아직 공고가 없습니다. 적재 스크립트로 공고를 넣거나 수집이 돌면 여기에 보입니다."
-            : "이 상태의 공고가 없습니다."}
+            : "고른 조건에 맞는 공고가 없습니다."}
         </p>
       )}
 
