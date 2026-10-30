@@ -1,9 +1,9 @@
 """공고 JSON을 검사하고, 바뀌는 내용을 보여 준 뒤 승인하면 DynamoDB에 넣는다.
 
-공고 파일은 저장소 밖(../private-data/)에 둔다. 형식은 docs/api.md의 공고 필드와 같다.
+공고 파일은 저장소 밖(last-plank 저장소의 private/jobs/, Git 제외)에 둔다. 형식은 docs/api.md의 공고 필드와 같다.
 로컬 SSO 프로필로만 실행한다. 배포 역할에는 DynamoDB 쓰기 권한이 없다.
 
-실행: python api/scripts/load_jobs.py ../private-data/jobs.json --profile sehyeokkim
+실행: python api/scripts/load_jobs.py ../../last-plank/private/jobs/jobs.json --profile sehyeokkim
 """
 
 import argparse
