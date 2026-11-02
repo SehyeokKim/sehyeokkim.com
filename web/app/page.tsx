@@ -4,6 +4,7 @@ import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
 import Motion from "@/app/components/Motion";
 import { EntrySiteCard, EntryToc } from "@/app/components/PrivateEntry";
 import Toc, { type TocItem } from "@/app/components/Toc";
+import ThemeToggle from "@/app/components/ThemeToggle";
 import { icons, type IconName } from "@/content/icons";
 import { legal, projectLegal } from "@/content/legal";
 import {
@@ -192,7 +193,15 @@ export default function Home() {
   return (
     <div className="layout">
       <Motion />
-      <Toc items={toc} footer={<EntryToc />} />
+      <Toc
+        items={toc}
+        footer={
+          <>
+            <ThemeToggle />
+            <EntryToc />
+          </>
+        }
+      />
       <main className="page">
         <header className="hero">
           {/* 프로필 이미지(움직이는 GIF). 움직임 줄이기를 켠 방문자에게는 정지 이미지를 보여 준다 */}
