@@ -34,10 +34,16 @@ export const viewport: Viewport = {
 // Chrome은 로드 뒤 #위치로 다시 스크롤하므로 로드 시점에도 맨 위로 보내고, smooth 스크롤이 끼어들지 않게 즉시 이동한다
 const startAtTopOnReload = `(function(){try{var n=performance.getEntriesByType("navigation")[0];if(!n||n.type!=="reload")return;history.scrollRestoration="manual";if(location.hash)history.replaceState(null,"",location.pathname+location.search);var top=function(){window.scrollTo({top:0,left:0,behavior:"instant"});};top();document.addEventListener("DOMContentLoaded",top,{once:true});window.addEventListener("load",function(){top();requestAnimationFrame(top);},{once:true});}catch(e){}})();`;
 
+// 목차의 테마 버튼(ThemeToggle)으로 고른 값을 그리기 전에 적용해, 새로고침 때 다른 모드 색이 잠깐 비치지 않게 한다.
+// 주소창 색(theme-color)은 <meta>가 읽힌 뒤에 맞춘다
+const applySavedTheme = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")return;document.documentElement.dataset.theme=t;document.addEventListener("DOMContentLoaded",function(){var bg=getComputedStyle(document.body).backgroundColor;document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.dataset.original=m.content;m.content=bg;});},{once:true});}catch(e){}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko">
+    // data-theme은 위 스크립트가 React보다 먼저 넣으므로 hydration 경고에서 뺀다
+    <html lang="ko" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: applySavedTheme }} />
         <script dangerouslySetInnerHTML={{ __html: startAtTopOnReload }} />
       </head>
       <body>{children}</body>
