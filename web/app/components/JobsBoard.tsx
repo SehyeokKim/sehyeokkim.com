@@ -35,17 +35,61 @@ const employments: EmploymentFilter[] = [...employmentFilters, "미확인"];
 
 const noSubscribe = () => () => {};
 
+type ViewKey = "live" | "sample";
+
 // 조건마다 여러 값을 고를 수 있다. 빈 배열 = 전체. 같은 조건 안은 "또는", 조건끼리는 "그리고"
-type View = {
+type Filters = {
   filter: JobStatus[];
   fitFilter: Fit[];
   employment: EmploymentFilter[];
   area: string[];
-  scrollY: number | null;
 };
-const initialView = (): View => ({ filter: [], fitFilter: [], employment: [], area: [], scrollY: null });
-// 상세에 들어갔다 돌아와도 필터와 스크롤 위치가 그대로이게 모듈 메모리에 둔다 (새로고침하면 처음으로)
-const views: Record<"live" | "sample", View> = { live: initialView(), sample: initialView() };
+const noFilters: Filters = { filter: [], fitFilter: [], employment: [], area: [] };
+
+// 고른 필터는 sessionStorage에 둬서 상세에 들어갔다 오거나 새로고침해도 남는다 (탭을 닫으면 처음으로).
+// 정적 HTML은 필터 없이 그리므로 useSyncExternalStore로 읽어, 브라우저에서만 저장된 값으로 바꾼다
+const filterStore = {
+  cache: {} as Partial<Record<ViewKey, Filters>>,
+  listeners: new Set<() => void>(),
+  subscribe(listener: () => void) {
+    filterStore.listeners.add(listener);
+    return () => {
+      filterStore.listeners.delete(listener);
+    };
+  },
+  get(key: ViewKey): Filters {
+    return (filterStore.cache[key] ??= readFilters(key));
+  },
+  set(key: ViewKey, patch: Partial<Filters>) {
+    filterStore.cache[key] = { ...filterStore.get(key), ...patch };
+    try {
+      sessionStorage.setItem(`jobs-filters-${key}`, JSON.stringify(filterStore.cache[key]));
+    } catch {
+      // 저장이 막힌 브라우저에서는 이 페이지를 보는 동안만 남는다
+    }
+    filterStore.listeners.forEach((l) => l());
+  },
+};
+
+// 저장된 값은 지금 있는 선택지만 받는다 (선택지가 바뀌었거나 값이 깨졌으면 그 조건은 전체)
+function readFilters(key: ViewKey): Filters {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(`jobs-filters-${key}`) ?? "{}");
+    const pick = <T extends string>(value: unknown, allowed: readonly T[]): T[] =>
+      Array.isArray(value) ? value.filter((v): v is T => allowed.includes(v)) : [];
+    return {
+      filter: pick(saved.filter, statuses),
+      fitFilter: pick(saved.fitFilter, fits),
+      employment: pick(saved.employment, employments),
+      area: pick(saved.area, roleAreaNames),
+    };
+  } catch {
+    return noFilters;
+  }
+}
+
+// 상세에 들어갈 때의 스크롤 위치. 돌아왔을 때 한 번만 되돌리면 되므로 모듈 메모리에 둔다
+const scrollPositions: Record<ViewKey, number | null> = { live: null, sample: null };
 
 // 로그인한 본인의 공고 목록. sample이면 API를 부르지 않고 예시 공고(sampleJobs)만 그린다.
 // 공고를 누르면 상세 페이지(?id=)로 간다. 정적 사이트라 공고별 페이지를 빌드 때 만들 수 없기 때문
@@ -62,11 +106,16 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
   // 마감 여부와 정렬도 오늘 날짜에 달려 있어 브라우저에서만 적용한다 (빌드 때의 정적 HTML과 어긋나지 않게)
   const state: State =
     base.kind === "ready" && hydrated ? { kind: "ready", jobs: sortJobs(visibleJobs(base.jobs)) } : base;
-  const view = views[sample ? "sample" : "live"];
-  const [filter, setFilter] = useState(view.filter);
-  const [fitFilter, setFitFilter] = useState(view.fitFilter);
-  const [employment, setEmployment] = useState(view.employment);
-  const [area, setArea] = useState(view.area);
+  const key: ViewKey = sample ? "sample" : "live";
+  const { filter, fitFilter, employment, area } = useSyncExternalStore(
+    filterStore.subscribe,
+    () => filterStore.get(key),
+    () => noFilters,
+  );
+  const setFilter = (v: JobStatus[]) => filterStore.set(key, { filter: v });
+  const setFitFilter = (v: Fit[]) => filterStore.set(key, { fitFilter: v });
+  const setEmployment = (v: EmploymentFilter[]) => filterStore.set(key, { employment: v });
+  const setArea = (v: string[]) => filterStore.set(key, { area: v });
   const detailHref = sample ? "/private/sample/detail/" : "/private/jobs/detail/";
 
   const load = useCallback(() => {
@@ -80,17 +129,14 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
     if (!sample) load();
   }, [load, sample]);
 
-  useEffect(() => {
-    Object.assign(view, { filter, fitFilter, employment, area });
-  }, [view, filter, fitFilter, employment, area]);
-
   // 상세로 갈 때 저장한 스크롤 위치로, 목록을 그린 뒤 한 번만 되돌린다 (html의 smooth 스크롤 없이 바로)
   const listShown = hydrated && state.kind === "ready";
   useEffect(() => {
-    if (!listShown || view.scrollY === null) return;
-    window.scrollTo({ top: view.scrollY, behavior: "instant" });
-    view.scrollY = null;
-  }, [listShown, view]);
+    const top = scrollPositions[key];
+    if (!listShown || top === null) return;
+    window.scrollTo({ top, behavior: "instant" });
+    scrollPositions[key] = null;
+  }, [listShown, key]);
 
   function retry() {
     setLive({ kind: "loading" });
@@ -195,7 +241,7 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
                   href={`${detailHref}?id=${encodeURIComponent(job.id)}`}
                   className="job-open"
                   onClick={() => {
-                    view.scrollY = window.scrollY;
+                    scrollPositions[key] = window.scrollY;
                   }}
                 >
                   <span className="job-title">
