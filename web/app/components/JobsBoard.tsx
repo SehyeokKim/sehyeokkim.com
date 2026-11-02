@@ -29,7 +29,7 @@ import { sampleJobs } from "./sampleJobs";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; jobs: Job[] };
 
-const statuses: JobStatus[] = ["candidate", "new", "applied", "excluded"];
+const statuses: JobStatus[] = ["candidate", "new", "applied", "excluded", "closed"];
 const fits: Fit[] = ["high", "mid", "low"];
 const employments: EmploymentFilter[] = [...employmentFilters, "미확인"];
 
@@ -97,14 +97,18 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
     load();
   }
 
-  // 선택지 옆 숫자: 다른 조건과 관계없이 그 값에 해당하는 공고 수
-  const count = (pred: (j: Job) => boolean) => (state.kind === "ready" ? state.jobs.filter(pred).length : 0);
+  // 마감으로 표시한 공고는 상태 필터에서 "마감"을 고를 때만 보인다
+  const showClosed = filter.includes("closed");
+  const all = state.kind === "ready" ? state.jobs : [];
+  // 선택지 옆 숫자: 다른 조건과 관계없이 그 값에 해당하는 공고 수 (숨긴 마감 공고는 "마감" 숫자에만 센다)
+  const countAll = (pred: (j: Job) => boolean) => all.filter(pred).length;
+  const count = (pred: (j: Job) => boolean) => countAll((j) => (showClosed || j.status !== "closed") && pred(j));
 
   const jobs =
     state.kind === "ready"
       ? state.jobs.filter(
           (j) =>
-            (filter.length === 0 || filter.includes(j.status)) &&
+            (filter.length === 0 ? j.status !== "closed" : filter.includes(j.status)) &&
             (fitFilter.length === 0 || (j.fit !== null && fitFilter.includes(j.fit))) &&
             (employment.length === 0 || employment.some((f) => matchesEmployment(j, f))) &&
             (area.length === 0 || area.includes(roleArea(j))),
@@ -119,7 +123,7 @@ export default function JobsBoard({ sample = false }: { sample?: boolean }) {
           <MultiSelect
             label="상태로 거르기"
             allLabel="상태 전체"
-            options={statuses.map((f) => ({ value: f, label: statusLabel[f], count: count((j) => j.status === f) }))}
+            options={statuses.map((f) => ({ value: f, label: statusLabel[f], count: countAll((j) => j.status === f) }))}
             selected={filter}
             onChange={setFilter}
           />

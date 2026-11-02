@@ -4,11 +4,13 @@ from typing import Annotated, Literal, Protocol
 import boto3
 from botocore.exceptions import ClientError
 from fastapi import Depends
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StrictBool
 
 from app.config import Settings, get_settings
 
-Status = Literal["new", "candidate", "applied", "excluded"]
+Status = Literal["new", "candidate", "applied", "excluded", "closed"]
+# 마감 표시를 취소하면 돌아갈 수 있는 상태 (지원 완료 공고는 마감으로 바꾸지 않는다)
+OpenStatus = Literal["new", "candidate", "excluded"]
 Fit = Literal["high", "mid", "low"]
 ShortText = Annotated[str, Field(max_length=80)]
 # 지원 경로: 공고 원문의 도메인(예: jobs.example.com) 또는 company(회사 채용 페이지)
@@ -38,6 +40,8 @@ class Job(BaseModel):
     salary: ShortText | None = None
     applied_at: date | None = None
     applied_via: Channel | None = None
+    # 화면에서 마감으로 표시하기 전 상태. 마감 취소 때 이 값으로 되돌린다
+    closed_from: OpenStatus | None = None
 
 
 class ApplyRequest(BaseModel):
@@ -47,6 +51,19 @@ class ApplyRequest(BaseModel):
 
     status: Literal["applied"]
     applied_via: Channel
+
+
+class CloseRequest(BaseModel):
+    """마감으로 표시(true)하거나 그 표시를 취소(false)하는 요청."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # "yes" · 1 같은 값이 true로 바뀌지 않게 JSON 불리언만 받는다
+    closed: StrictBool
+
+
+class JobConflict(Exception):
+    """공고는 있지만 지금 상태에서는 바꿀 수 없음 (예: 지원 완료 공고를 마감으로 표시)."""
 
 
 def sort_key(job: Job) -> tuple:
@@ -63,6 +80,8 @@ class JobRepository(Protocol):
     def list_jobs(self) -> list[Job]: ...
 
     def mark_applied(self, job_id: str, applied_via: str, applied_at: date) -> Job | None: ...
+
+    def set_closed(self, job_id: str, closed: bool) -> Job | None: ...
 
 
 class DynamoJobRepository:
@@ -85,7 +104,7 @@ class DynamoJobRepository:
         try:
             resp = self.table.update_item(
                 Key={"id": job_id},
-                UpdateExpression="SET #status = :status, applied_at = :at, applied_via = :via",
+                UpdateExpression="SET #status = :status, applied_at = :at, applied_via = :via REMOVE closed_from",
                 ConditionExpression="attribute_exists(id)",
                 ExpressionAttributeNames={"#status": "status"},  # status는 DynamoDB 예약어
                 ExpressionAttributeValues={":status": "applied", ":at": applied_at.isoformat(), ":via": applied_via},
@@ -93,6 +112,39 @@ class DynamoJobRepository:
             )
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                return None
+            raise
+        return _to_job(resp["Attributes"])
+
+    def set_closed(self, job_id: str, closed: bool) -> Job | None:
+        """마감 표시 · 취소. 없는 공고면 None, 지금 상태에서 바꿀 수 없으면 JobConflict.
+
+        마감: 지원 완료 · 마감이 아닌 공고만. 이전 상태를 closed_from에 남긴다 (SET의 오른쪽은 바꾸기 전 값)
+        취소: 마감인 공고만. closed_from으로 되돌리고, 값이 없으면(적재 파일에서 마감으로 넣은 공고) new
+        """
+        if closed:
+            update = "SET closed_from = #status, #status = :closed"
+            condition = "attribute_exists(id) AND #status IN (:new, :candidate, :excluded)"
+            values = {":closed": "closed", ":new": "new", ":candidate": "candidate", ":excluded": "excluded"}
+        else:
+            update = "SET #status = if_not_exists(closed_from, :new) REMOVE closed_from"
+            condition = "attribute_exists(id) AND #status = :closed"
+            values = {":closed": "closed", ":new": "new"}
+        try:
+            resp = self.table.update_item(
+                Key={"id": job_id},
+                UpdateExpression=update,
+                ConditionExpression=condition,
+                ExpressionAttributeNames={"#status": "status"},
+                ExpressionAttributeValues=values,
+                ReturnValues="ALL_NEW",
+                # 조건이 틀렸을 때 기존 항목을 받아 "없는 공고"와 "상태가 안 맞음"을 구분한다 (GetItem을 한 번 더 하지 않게)
+                ReturnValuesOnConditionCheckFailure="ALL_OLD",
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                if e.response.get("Item"):
+                    raise JobConflict(job_id) from e
                 return None
             raise
         return _to_job(resp["Attributes"])
