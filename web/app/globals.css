@@ -2085,7 +2085,8 @@ p {
   opacity: 0.75;
 }
 
-.job-apply .btn-primary:disabled {
+.job-apply .btn-primary:disabled,
+.job-apply .btn-ghost:disabled {
   opacity: 0.6;
   cursor: default;
 }

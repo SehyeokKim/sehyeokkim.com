@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import JobDetail from "./JobDetail";
-import { type Job, LOGIN_EXPIRED, applyJob, channelOptions, fetchJobs, todayYmd } from "./jobs";
+import { type Job, LOGIN_EXPIRED, applyJob, channelOptions, fetchJobs, setJobClosed, todayYmd } from "./jobs";
 import { sampleJobs } from "./sampleJobs";
 
 const noSubscribe = () => () => {};
 
 // 공고 상세 페이지(/private/jobs/detail/?id=, 샘플은 /private/sample/detail/?id=).
-// 지원 경로 선택지가 전체 공고의 도메인에서 나오므로, 실제 화면도 공고 하나가 아니라 목록을 받아 고른다
+// 공고 하나를 받는 API가 없으므로 목록을 받아 id로 고른다
 export default function JobDetailScreen({ sample = false }: { sample?: boolean }) {
   // 정적 HTML에는 쿼리가 없으므로 서버 값은 null, 브라우저에서만 실제 주소를 읽는다
   const id = useSyncExternalStore(noSubscribe, () => new URLSearchParams(window.location.search).get("id"), () => null);
@@ -35,7 +35,24 @@ export default function JobDetailScreen({ sample = false }: { sample?: boolean }
       sampleJobs.update(job.id, { status: "applied", applied_at: todayYmd(), applied_via: appliedVia });
       return true;
     }
-    const updated = await applyJob(job.id, appliedVia);
+    return replace(await applyJob(job.id, appliedVia));
+  }
+
+  async function markClosed(closed: boolean): Promise<boolean> {
+    if (!job) return false;
+    if (sample) {
+      sampleJobs.update(
+        job.id,
+        closed
+          ? { status: "closed", closed_from: job.status }
+          : { status: job.closed_from ?? "new", closed_from: null },
+      );
+      return true;
+    }
+    return replace(await setJobClosed(job.id, closed));
+  }
+
+  function replace(updated: Job | null): boolean {
     if (!updated) return false;
     setLive((prev) => (Array.isArray(prev) ? prev.map((j) => (j.id === updated.id ? updated : j)) : prev));
     return true;
@@ -69,9 +86,10 @@ export default function JobDetailScreen({ sample = false }: { sample?: boolean }
           <div className="job-detail-page">
             <JobDetail
               job={job}
-              channels={channelOptions(jobs)}
+              channels={channelOptions(job)}
               sample={sample}
               onApply={markApplied}
+              onSetClosed={markClosed}
             />
           </div>
         </>

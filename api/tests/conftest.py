@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings, get_settings
-from app.jobs import Job, get_repository
+from app.jobs import Job, JobConflict, get_repository
 from app.main import app
 
 SAMPLE = Path(__file__).resolve().parents[2] / "data" / "sample" / "jobs.json"
@@ -37,8 +37,23 @@ class FakeRepository:
     def mark_applied(self, job_id, applied_via, applied_at):
         for i, job in enumerate(self.jobs):
             if job.id == job_id:
-                self.jobs[i] = job.model_copy(update={"status": "applied", "applied_via": applied_via, "applied_at": applied_at})
+                self.jobs[i] = job.model_copy(
+                    update={"status": "applied", "applied_via": applied_via, "applied_at": applied_at, "closed_from": None}
+                )
                 return self.jobs[i]
+        return None
+
+    def set_closed(self, job_id, closed):
+        for i, job in enumerate(self.jobs):
+            if job.id != job_id:
+                continue
+            if closed and job.status in ("new", "candidate", "excluded"):
+                self.jobs[i] = job.model_copy(update={"status": "closed", "closed_from": job.status})
+            elif not closed and job.status == "closed":
+                self.jobs[i] = job.model_copy(update={"status": job.closed_from or "new", "closed_from": None})
+            else:
+                raise JobConflict(job_id)
+            return self.jobs[i]
         return None
 
 
