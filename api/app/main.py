@@ -8,7 +8,7 @@ from mangum import Mangum
 
 from app import auth
 from app.config import UNSET, Settings, get_settings
-from app.jobs import ApplyRequest, CloseRequest, JobConflict, JobRepository, get_repository
+from app.jobs import ApplyRequest, CloseRequest, DismissRequest, JobConflict, JobRepository, get_repository
 
 # 문서 화면(/docs, /openapi.json)은 공개 주소에 노출하지 않는다
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
@@ -91,7 +91,7 @@ def list_jobs(_: dict = Depends(auth.require_session), repo: JobRepository = Dep
 @app.patch("/api/jobs/{job_id}")
 def update_job(
     job_id: str,
-    body: ApplyRequest | CloseRequest,
+    body: ApplyRequest | CloseRequest | DismissRequest,
     request: Request,
     _: dict = Depends(auth.require_session),
     settings: Settings = Depends(get_settings),
@@ -105,7 +105,10 @@ def update_job(
         job = repo.mark_applied(job_id, body.applied_via, datetime.now(KST).date())
     else:
         try:
-            job = repo.set_closed(job_id, body.closed)
+            if isinstance(body, CloseRequest):
+                job = repo.set_closed(job_id, body.closed)
+            else:
+                job = repo.set_dismissed(job_id, body.dismissed)
         except JobConflict:
             raise HTTPException(status_code=409, detail="conflict")
     if job is None:
