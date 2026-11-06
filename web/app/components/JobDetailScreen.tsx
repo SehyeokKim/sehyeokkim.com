@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import JobDetail from "./JobDetail";
-import { type Job, LOGIN_EXPIRED, applyJob, channelOptions, fetchJobs, setJobClosed, todayYmd } from "./jobs";
+import { type Job, LOGIN_EXPIRED, applyJob, channelOptions, fetchJobs, setJobClosed, setJobDismissed, todayYmd } from "./jobs";
 import { sampleJobs } from "./sampleJobs";
 
 const noSubscribe = () => () => {};
@@ -52,6 +52,20 @@ export default function JobDetailScreen({ sample = false }: { sample?: boolean }
     return replace(await setJobClosed(job.id, closed));
   }
 
+  async function markDismissed(dismissed: boolean): Promise<boolean> {
+    if (!job) return false;
+    if (sample) {
+      sampleJobs.update(
+        job.id,
+        dismissed
+          ? { status: "dismissed", dismissed_from: job.status }
+          : { status: job.dismissed_from ?? "new", dismissed_from: null },
+      );
+      return true;
+    }
+    return replace(await setJobDismissed(job.id, dismissed));
+  }
+
   function replace(updated: Job | null): boolean {
     if (!updated) return false;
     setLive((prev) => (Array.isArray(prev) ? prev.map((j) => (j.id === updated.id ? updated : j)) : prev));
@@ -90,6 +104,7 @@ export default function JobDetailScreen({ sample = false }: { sample?: boolean }
               sample={sample}
               onApply={markApplied}
               onSetClosed={markClosed}
+              onSetDismissed={markDismissed}
             />
           </div>
         </>

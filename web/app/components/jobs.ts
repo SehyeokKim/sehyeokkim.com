@@ -1,6 +1,6 @@
 // 공고 목록 · 상세가 함께 쓰는 형식과 표시 규칙. 필드는 docs/api.md의 공고 필드와 같다.
 
-export type JobStatus = "new" | "candidate" | "applied" | "excluded" | "closed";
+export type JobStatus = "new" | "candidate" | "applied" | "excluded" | "closed" | "dismissed";
 
 export type Job = {
   id: string;
@@ -24,6 +24,8 @@ export type Job = {
   applied_via?: string | null;
   // 화면에서 마감으로 표시하기 전 상태. 마감 취소 때 이 값으로 돌아간다
   closed_from?: JobStatus | null;
+  // 화면에서 관심없음으로 표시하기 전 상태. 취소 때 이 값으로 돌아간다
+  dismissed_from?: JobStatus | null;
 };
 
 export const COMPANY_CHANNEL = "company";
@@ -53,6 +55,7 @@ export const statusLabel: Record<JobStatus, string> = {
   applied: "지원 완료",
   excluded: "제외",
   closed: "마감",
+  dismissed: "관심없음",
 };
 export const statusClass: Record<JobStatus, string> = {
   candidate: "status signal",
@@ -60,6 +63,7 @@ export const statusClass: Record<JobStatus, string> = {
   applied: "status ok",
   excluded: "status",
   closed: "status",
+  dismissed: "status",
 };
 export const fitLabel: Record<NonNullable<Job["fit"]>, string> = { high: "적합도 상", mid: "적합도 중", low: "적합도 하" };
 export type Fit = NonNullable<Job["fit"]>;
@@ -176,6 +180,11 @@ export function applyJob(id: string, appliedVia: string): Promise<Job | null> {
 // 마감으로 표시(true)하거나 그 표시를 취소(false)한다
 export function setJobClosed(id: string, closed: boolean): Promise<Job | null> {
   return patchJob(id, { closed });
+}
+
+// 관심없음으로 표시(true)하거나 그 표시를 취소(false)한다
+export function setJobDismissed(id: string, dismissed: boolean): Promise<Job | null> {
+  return patchJob(id, { dismissed });
 }
 
 async function patchJob(id: string, body: object): Promise<Job | null> {
