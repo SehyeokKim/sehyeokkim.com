@@ -847,6 +847,27 @@ p {
   border-top: 2px dotted var(--ok);
 }
 
+/* 프로젝트 구성도: 사람 승인 선은 HITL 색, 선 위 글자는 바탕색 테두리로 선과 겹쳐도 읽히게 */
+.arch-edge.approval {
+  stroke: var(--signal);
+  stroke-dasharray: 6 3;
+}
+
+.legend.approval {
+  border-top: 2px dashed var(--signal);
+}
+
+.arch-edge-label.halo {
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.arch-edge-label.center {
+  text-anchor: middle;
+}
+
 /* 상태 태그: 흐름(예: 제안 → 사람 검토 → 배포)을 색으로 구분 */
 .status {
   display: inline-block;
@@ -1165,10 +1186,12 @@ p {
    열릴 때: 창이 아래에서 떠오르며 커지고, 뒤 배경이 어두워지며 흐려지고, 안의 섹션이 차례로 떠오른다.
    @starting-style을 모르는 브라우저에서는 움직임 없이 바로 열린다 */
 .project-detail {
-  width: min(760px, calc(100vw - 32px));
-  max-height: min(84vh, 820px);
+  width: min(1200px, calc(100vw - 48px));
+  height: calc(100dvh - 48px);
+  max-height: none;
   overflow-y: auto;
-  padding: 0 28px 28px;
+  overscroll-behavior: contain;
+  padding: 0 40px 40px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--bg);
@@ -1250,8 +1273,308 @@ p {
 
 .detail-body {
   display: grid;
-  gap: 22px;
-  padding-top: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 36px;
+  padding-top: 24px;
+}
+
+/* 넓은 구성도가 칸을 밀어 늘리지 않고 구성도 안에서만 가로 스크롤되게 한다 */
+.detail-body > *,
+.detail-sections > * {
+  min-width: 0;
+}
+
+/* 창이 열려 있는 동안 뒤 페이지가 같이 스크롤되지 않게 한다 */
+html:has(.project-detail:popover-open) {
+  overflow: hidden;
+}
+
+.detail-close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -6px -10px 0 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.detail-close:hover {
+  background: var(--tag-bg);
+  color: var(--text);
+}
+
+.detail-close:active {
+  background: var(--border);
+}
+
+.detail-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.detail-overview {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-summary {
+  max-width: 52em;
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.detail-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px 28px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.detail-steps li {
+  position: relative;
+  padding-left: 30px;
+  counter-increment: step;
+}
+
+.detail-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.detail-steps strong {
+  color: var(--text);
+}
+
+/* 실행 화면: 가로 화면은 2열, 세로 모바일 화면은 가로로 나란히 (넘치면 가로 스크롤) */
+.shots-wide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  gap: 20px;
+}
+
+.shots-phone {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+
+.shots-wide + .shots-phone {
+  margin-top: 20px;
+}
+
+.shots-wide figure,
+.shots-phone figure {
+  margin: 0;
+}
+
+.shots-phone figure {
+  flex: 0 0 180px;
+  scroll-snap-align: start;
+}
+
+.shots-wide img,
+.shots-phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.shots-phone img {
+  border-radius: 14px;
+}
+
+.detail-body .shots-note {
+  margin: -2px 0 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* 크게 보는 창의 설명 앞 "예시 화면" 표시 */
+.shot-badge {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* 캡처 버튼: 누르면 크게 보는 창이 뜬다 */
+.shot-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+}
+
+/* 누를 수 있다는 표시: 올리면 테두리가 강조색, 누르는 동안 살짝 흐려진다 */
+.shot-open img {
+  transition:
+    border-color 0.2s,
+    opacity 0.2s;
+}
+
+.shot-open:hover img {
+  border-color: var(--accent);
+}
+
+.shot-open:active img {
+  opacity: 0.8;
+}
+
+.shot-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* 크게 보는 창: 상세 창 위에 화면 전체를 덮고, 어두운 바깥을 누르면 닫힌다 (app/components/ShotGallery.tsx) */
+.shot-viewer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 56px 24px 24px;
+  border: none;
+  background: rgb(0 0 0 / 0.88);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.25s ease,
+    overlay 0.25s allow-discrete,
+    display 0.25s allow-discrete;
+}
+
+.shot-viewer:popover-open {
+  display: grid;
+  place-items: center;
+  opacity: 1;
+}
+
+@starting-style {
+  .shot-viewer:popover-open {
+    opacity: 0;
+  }
+}
+
+.shot-viewer figure {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 100%;
+  margin: 0;
+  cursor: default;
+}
+
+.shot-viewer img {
+  display: block;
+  max-width: min(1400px, 100%);
+  max-height: calc(100dvh - 120px);
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+}
+
+.shot-viewer figcaption {
+  margin: 0;
+  color: #e6e8ec;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.shot-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #e6e8ec;
+  font-size: 1.9rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shot-close:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.shot-close:active {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.shot-close:focus-visible {
+  outline: 2px solid #e6e8ec;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shot-viewer {
+    transition: none;
+  }
+}
+
+/* 가로 화면은 같은 비율(16:10)로 맞춰 나란히 놓았을 때 크기가 같게 한다 */
+.shots-wide img {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top;
+}
+
+.project-detail figcaption {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.project-arch {
+  margin: 0;
+}
+
+/* 열이 적은 구성도가 원래 크기보다 커지지 않게 상한을 두고 가운데에 놓는다 */
+.project-arch svg {
+  margin: 0 auto;
+}
+
+.detail-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 40px;
 }
 
 .detail-body h3 {
@@ -1262,7 +1585,7 @@ p {
   font-weight: 700;
 }
 
-.detail-body ul {
+.detail-sections ul {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1273,7 +1596,7 @@ p {
 }
 
 /* 섹션이 하나씩 차례로 떠오른다 (--i: 섹션 순서) */
-.project-detail:popover-open .detail-body > section {
+.project-detail:popover-open .detail-body section {
   animation: detail-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(0.15s + var(--i, 0) * 0.08s);
 }
@@ -1294,8 +1617,16 @@ p {
   font-size: 0.82rem;
 }
 
+@media (max-width: 860px) {
+  .detail-sections {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 560px) {
   .project-detail {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
     padding: 0 18px 22px;
   }
 
@@ -1310,7 +1641,7 @@ p {
     transition: none;
   }
 
-  .project-detail:popover-open .detail-body > section {
+  .project-detail:popover-open .detail-body section {
     animation: none;
   }
 }
@@ -1352,6 +1683,27 @@ p {
 
 .project-open:focus-visible {
   outline: none;
+}
+
+/* 카드 오른쪽 아래 "자세히 보기" 표시. 마우스를 올리면 강조색으로 바뀐다 */
+.project-more {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.project-more::after {
+  content: "+";
+  display: inline-block;
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+.project:hover .project-more,
+.project:has(.project-open:focus-visible) .project-more {
+  color: var(--accent);
 }
 
 /* 카드 안의 링크 · 버튼은 누름 영역 위에 둬서 따로 눌리게 한다 */
