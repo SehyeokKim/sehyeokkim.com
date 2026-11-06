@@ -1,9 +1,9 @@
 """공고 JSON을 검사하고, 바뀌는 내용을 보여 준 뒤 승인하면 DynamoDB에 넣는다.
 
-공고 파일은 저장소 밖(../private-data/)에 둔다. 형식은 docs/api.md의 공고 필드와 같다.
+공고 파일은 저장소 밖(last-plank 저장소의 private/jobs/, Git 제외)에 둔다. 형식은 docs/api.md의 공고 필드와 같다.
 로컬 SSO 프로필로만 실행한다. 배포 역할에는 DynamoDB 쓰기 권한이 없다.
 
-실행: python api/scripts/load_jobs.py ../private-data/jobs.json --profile sehyeokkim
+실행: python api/scripts/load_jobs.py ../../last-plank/private/jobs/jobs.json --profile sehyeokkim
 """
 
 import argparse
@@ -59,10 +59,11 @@ def main() -> int:
         kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
     new_items = {j.id: j.model_dump(mode="json", exclude_none=True) | {"expires_at": expires_at(j)} for j in jobs}
-    # 화면에서 지원 완료로 바꾼 공고는 파일 내용으로 상태를 되돌리지 않는다
+    # 화면에서 지원 완료 · 마감 · 관심없음으로 바꾼 공고는 파일 내용으로 상태를 되돌리지 않는다
+    kept = ("status", "applied_at", "applied_via", "closed_from", "dismissed_from")
     for i, item in new_items.items():
-        if current.get(i, {}).get("status") == "applied":
-            item.update({k: current[i][k] for k in ("status", "applied_at", "applied_via") if k in current[i]})
+        if current.get(i, {}).get("status") in ("applied", "closed", "dismissed"):
+            item.update({k: current[i][k] for k in kept if k in current[i]})
     added = [i for i in new_items if i not in current]
     changed = [i for i in new_items if i in current and current[i] != new_items[i]]
     removed = [i for i in current if i not in new_items] if args.prune else []

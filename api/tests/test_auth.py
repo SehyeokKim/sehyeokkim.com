@@ -60,7 +60,7 @@ def test_callback_success_sets_session_and_goes_to_jobs(client, monkeypatch):
     jobs = client.get("/api/jobs")
     assert jobs.status_code == 200
     deadlines = [item["deadline"] for item in jobs.json()["items"]]
-    assert deadlines == ["2026-10-22", "2026-10-24", "2026-10-31", None]
+    assert deadlines == ["2026-10-22", "2026-10-24", "2026-10-31", None, None]
 
 
 def test_callback_with_wrong_state_fails(client, monkeypatch):
