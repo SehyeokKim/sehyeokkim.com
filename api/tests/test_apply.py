@@ -56,7 +56,7 @@ def test_apply_rejects_other_origins(client, settings, origin):
 @pytest.mark.parametrize(
     "body",
     [
-        {"status": "excluded", "applied_via": "company"},  # 지금은 지원 완료만
+        {"status": "excluded", "applied_via": "company"},  # 상태를 직접 바꾸는 요청은 지원 완료만
         {"status": "applied", "applied_via": "javascript:alert(1)"},
         {"status": "applied", "applied_via": "https://jobs.example.com/1"},  # 주소가 아니라 도메인만
         {"status": "applied"},

@@ -114,7 +114,7 @@ export const projects: Project[] = [
     slug: "agetrust",
     name: "AgeTrust",
     tagline: "얼굴인식 · DID/VC 기반 제로트러스트 성인인증",
-    period: "2026.08–진행 중",
+    period: "2026.08–2026.10",
     summary: "편의점 · 주점의 위조 신분증 문제에 대응해, 개인정보 노출 없이 성인 여부만 증명하는 키오스크 인증입니다.",
     role: "PM · INFRA-BE",
     team: "4인 팀",
