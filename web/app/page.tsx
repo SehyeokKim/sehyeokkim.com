@@ -1,4 +1,6 @@
 import ArchitectureDiagram from "@/app/components/ArchitectureDiagram";
+import ProjectDiagram from "@/app/components/ProjectDiagram";
+import ShotGallery from "@/app/components/ShotGallery";
 import CopyEmail from "@/app/components/CopyEmail";
 import { LegalLink, LegalPopover } from "@/app/components/LegalPopover";
 import Motion from "@/app/components/Motion";
@@ -132,49 +134,98 @@ function Entry({
   );
 }
 
-// 프로젝트 "자세히 보기"에 보여 줄 섹션. 내용을 채우기 전에는 개발 서버에서만 빈 틀을 보여 주고,
-// 배포 화면에서는 빈 배열이라 버튼도 창도 그리지 않는다
+// 상세 창에 보여 줄 섹션. 내용을 채우기 전에는 개발 서버에서만 빈 틀을 보여 주고, 배포 화면에서는 빈 섹션을 그리지 않는다
 function detailSections(p: Project) {
   const filled = p.details?.filter((s) => s.items.length > 0) ?? [];
   if (filled.length > 0) return filled;
   return process.env.NODE_ENV === "development" ? (p.details ?? []) : [];
 }
 
-// 프로젝트 상세 창. 법적 고지와 같은 브라우저 기본 popover라 스크립트 없이 열리고, Esc · 바깥 클릭으로 닫힌다.
-// 열릴 때의 움직임(떠오르며 커짐 · 섹션이 차례로 등장)은 CSS가 맡는다
-function ProjectDetail({ project: p, sections }: { project: Project; sections: NonNullable<Project["details"]> }) {
+// 상세 창을 열 만한 내용(섹션 · 구성도 · 화면)이 하나라도 있으면 카드를 누를 수 있게 한다
+const hasDetail = (p: Project) => detailSections(p).length > 0 || !!p.diagram || !!p.shots?.length;
+
+// 프로젝트 상세 창. 법적 고지와 같은 브라우저 기본 popover라 스크립트 없이 열리고, Esc · 바깥 클릭 · × 로 닫힌다.
+// 화면을 거의 채우는 크기로 열리고, 열릴 때의 움직임(떠오르며 커짐 · 블록이 차례로 등장)은 CSS가 맡는다
+function ProjectDetail({ project: p }: { project: Project }) {
   const id = `detail-${p.slug}`;
+  const sections = detailSections(p);
+  let i = 0;
+  const step = () => ({ "--i": i++ }) as React.CSSProperties;
   return (
     <div id={id} popover="auto" className="project-detail" aria-labelledby={`${id}-title`}>
       <header className="detail-head">
         <div>
           <p className="detail-meta">
-            {p.period} · {p.team}
+            {p.period} · {p.team} · {p.role}
           </p>
           <h2 id={`${id}-title`}>{p.name}</h2>
           <p className="detail-tagline">{p.tagline}</p>
         </div>
-        <button type="button" className="legal-close" popoverTarget={id} popoverTargetAction="hide" aria-label="닫기">
+        <button type="button" className="detail-close" popoverTarget={id} popoverTargetAction="hide" aria-label="닫기">
           ×
         </button>
       </header>
       <div className="detail-body">
-        {sections.map((s, i) => (
-          <section key={s.title} style={{ "--i": i } as React.CSSProperties}>
-            <h3>{s.title}</h3>
-            {s.items.length > 0 ? (
-              <ul>
-                {s.items.map((item) => (
-                  <li key={item}>
-                    <Rich text={item} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="draft-note">작성 예정 (개발 서버에서만 보이는 빈 틀)</p>
-            )}
+        <section className="detail-overview" style={step()}>
+          <p className="detail-summary">{p.summary}</p>
+          <ul className="tags">
+            {p.stack.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+          {p.links && (
+            <p className="project-links">
+              {p.links.map((l) => (
+                <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer">
+                  {l.label} ↗
+                </a>
+              ))}
+            </p>
+          )}
+        </section>
+
+        {p.diagram && (
+          <section style={step()}>
+            <h3>구성도</h3>
+            <ProjectDiagram id={`${id}-arch`} title={`${p.name} 구성도`} diagram={p.diagram} />
+            <ol className="detail-steps">
+              {p.diagram.steps.map((s) => (
+                <li key={s}>
+                  <Rich text={s} />
+                </li>
+              ))}
+            </ol>
           </section>
-        ))}
+        )}
+
+        {p.shots && p.shots.length > 0 && (
+          <section style={step()}>
+            <h3>실행 화면</h3>
+            <p className="shots-note">화면 속 이름 · 수치 · 기록은 모두 시연용 예시 데이터입니다.</p>
+            <ShotGallery id={`${id}-shots`} shots={p.shots} />
+          </section>
+        )}
+
+        {sections.length > 0 && (
+          <div className="detail-sections">
+            {sections.map((s) => (
+              <section key={s.title} style={step()}>
+                <h3>{s.title}</h3>
+                {s.items.length > 0 ? (
+                  <ul>
+                    {s.items.map((item) => (
+                      <li key={item}>
+                        <Rich text={item} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="draft-note">작성 예정 (개발 서버에서만 보이는 빈 틀)</p>
+                )}
+              </section>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -316,7 +367,10 @@ export default function Home() {
         <section id="projects" className="block">
           <div data-reveal>
             <RuleTitle>Projects</RuleTitle>
-            <p className="section-note">※ 진행 중인 프로젝트는 개발이 계속되고 있어 상세 내용이 바뀔 수 있습니다.</p>
+            <p className="section-note">
+              카드를 누르면 구성도 · 실행 화면 · 상세 내용을 볼 수 있습니다. 진행 중인 프로젝트는 개발이 계속되고 있어 내용이
+              바뀔 수 있습니다.
+            </p>
           </div>
           {/* 시간 축이라 과거 → 최근 순서. 아래 카드는 이력서 관례대로 최근 먼저 */}
           <ol className="timeline" aria-label="프로젝트 타임라인" data-reveal>
@@ -334,7 +388,7 @@ export default function Home() {
                 <header>
                   {/* 상세 내용이 있으면 이름 버튼이 카드 전체를 덮어, 카드 어디를 눌러도 상세 창이 열린다 (안의 링크는 위에 떠 있어 따로 눌린다) */}
                   <h3>
-                    {detailSections(p).length > 0 ? (
+                    {hasDetail(p) ? (
                       <button
                         type="button"
                         className="project-open"
@@ -377,9 +431,15 @@ export default function Home() {
                       </a>
                     ))}
                     {projectLegal[p.slug] && <LegalLink target={`legal-${p.slug}`} />}
+                    {/* 누를 수 있는 카드라는 표시. 실제 동작은 카드 전체를 덮은 이름 버튼이 맡는다 */}
+                    {hasDetail(p) && (
+                      <span className="project-more" aria-hidden="true">
+                        자세히 보기
+                      </span>
+                    )}
                   </p>
                 )}
-                {detailSections(p).length > 0 && <ProjectDetail project={p} sections={detailSections(p)} />}
+                {hasDetail(p) && <ProjectDetail project={p} />}
                 {projectLegal[p.slug] && (
                   <LegalPopover id={`legal-${p.slug}`} title={`${p.name} 법적 고지`} sections={projectLegal[p.slug]} />
                 )}
