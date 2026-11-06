@@ -16,18 +16,21 @@ import {
 
 // 공고 상세: 저장하는 항목만 보여 준다(공고 본문은 저장하지 않음). 지원 완료로 바꿀 때 지원 경로(사이트)를 고른다.
 // 마감일 전에 닫힌 공고나 상시 공고는 "마감으로 표시"로 목록에서 뺀다 (잘못 눌렀으면 "마감 취소"로 이전 상태로)
+// 지원하지 않을 공고는 "관심없음"으로 같은 방식으로 뺀다
 export default function JobDetail({
   job,
   channels,
   sample = false,
   onApply,
   onSetClosed,
+  onSetDismissed,
 }: {
   job: Job;
   channels: string[];
   sample?: boolean;
   onApply: (appliedVia: string) => Promise<boolean>;
   onSetClosed: (closed: boolean) => Promise<boolean>;
+  onSetDismissed: (dismissed: boolean) => Promise<boolean>;
 }) {
   const [via, setVia] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -43,10 +46,10 @@ export default function JobDetail({
     setError(!ok);
   }
 
-  async function toggleClosed(closed: boolean) {
+  async function run(action: () => Promise<boolean>) {
     setSaving(true);
     setError(false);
-    const ok = await onSetClosed(closed);
+    const ok = await action();
     setSaving(false);
     setError(!ok);
   }
@@ -103,7 +106,7 @@ export default function JobDetail({
         <div className="job-apply">
           <span className="job-apply-label">마감으로 표시한 공고입니다. 목록의 상태 필터에서 “마감”을 고를 때만 보입니다.</span>
           <div className="job-apply-row">
-            <button type="button" className="btn-ghost" disabled={saving} onClick={() => toggleClosed(false)}>
+            <button type="button" className="btn-ghost" disabled={saving} onClick={() => run(() => onSetClosed(false))}>
               {saving ? "저장 중" : "마감 취소"}
             </button>
           </div>
@@ -111,7 +114,19 @@ export default function JobDetail({
         </div>
       )}
 
-      {job.status !== "applied" && job.status !== "closed" && (
+      {job.status === "dismissed" && (
+        <div className="job-apply">
+          <span className="job-apply-label">관심없음으로 표시한 공고입니다. 목록의 상태 필터에서 “관심없음”을 고를 때만 보입니다.</span>
+          <div className="job-apply-row">
+            <button type="button" className="btn-ghost" disabled={saving} onClick={() => run(() => onSetDismissed(false))}>
+              {saving ? "저장 중" : "관심없음 취소"}
+            </button>
+          </div>
+          {errorNote}
+        </div>
+      )}
+
+      {job.status !== "applied" && job.status !== "closed" && job.status !== "dismissed" && (
         <div className="job-apply">
           <span className="job-apply-label">지원 경로</span>
           <div className="job-apply-row">
@@ -127,8 +142,11 @@ export default function JobDetail({
             <button type="button" className="btn-primary" disabled={!via || saving} onClick={submit}>
               {saving ? "저장 중" : "지원 완료로 표시"}
             </button>
-            <button type="button" className="btn-ghost" disabled={saving} onClick={() => toggleClosed(true)}>
+            <button type="button" className="btn-ghost" disabled={saving} onClick={() => run(() => onSetClosed(true))}>
               마감으로 표시
+            </button>
+            <button type="button" className="btn-ghost" disabled={saving} onClick={() => run(() => onSetDismissed(true))}>
+              관심없음
             </button>
           </div>
           {picking && (

@@ -49,7 +49,7 @@
 | `deadline` | `YYYY-MM-DD` 또는 `null` | 마감일. `null`은 상시 · 채용 시 마감 |
 | `location`, `employment_type` | 문자열 또는 `null` | 지역, 고용형태 |
 | `source` | 문자열 | 출처 (`manual`, API 이름 등) |
-| `status` | `new` · `candidate` · `applied` · `excluded` · `closed` | 새 공고 · 지원 후보 · 지원 완료 · 제외 · 마감(마감일 전에 닫힌 공고를 직접 표시) |
+| `status` | `new` · `candidate` · `applied` · `excluded` · `closed` · `dismissed` | 새 공고 · 지원 후보 · 지원 완료 · 제외 · 마감(마감일 전에 닫힌 공고를 직접 표시) · 관심없음(지원하지 않을 공고를 직접 표시) |
 | `fit` | `high` · `mid` · `low` 또는 `null` | 적합도 (사람이 정하거나 검토한 값) |
 | `memo` | 문자열 또는 `null` | 본인 메모 |
 | `collected_at` | `YYYY-MM-DD` | 수집일 |
@@ -59,12 +59,13 @@
 | `applied_at` | `YYYY-MM-DD` 또는 `null` | 지원일. 지원 완료로 바꿀 때 서버가 오늘 날짜(KST)로 기록 |
 | `applied_via` | 문자열 또는 `null` | 지원 경로. 공고 원문의 도메인(예: `jobs.example.com`) 또는 `company`(회사 채용 페이지) |
 | `closed_from` | 상태 또는 `null` | 마감으로 표시하기 전 상태. 마감 취소 때 이 값으로 되돌린다 |
+| `dismissed_from` | 상태 또는 `null` | 관심없음으로 표시하기 전 상태. 관심없음 취소 때 이 값으로 되돌린다 |
 
 저장하지 않는 것: 공고 본문, 복지, 리뷰 원문, 채용 담당자 개인정보.
 
 ### `PATCH /api/jobs/{id}`
 
-공고를 지원 완료로 바꾸고 지원 경로를 남기거나, 마감으로 표시 · 취소한다. 본문은 둘 중 하나다.
+공고를 지원 완료로 바꾸고 지원 경로를 남기거나, 마감 · 관심없음으로 표시 · 취소한다. 본문은 셋 중 하나다.
 
 ```json
 { "status": "applied", "applied_via": "jobs.example.com" }
@@ -74,21 +75,26 @@
 { "closed": true }
 ```
 
+```json
+{ "dismissed": true }
+```
+
 - `closed: true`: `new` · `candidate` · `excluded` 공고를 `closed`로 바꾸고 이전 상태를 `closed_from`에 남긴다
 - `closed: false`: `closed` 공고를 `closed_from`의 상태로 되돌린다. 값이 없으면 `new`
+- `dismissed: true` · `false`: 같은 규칙으로 `dismissed`로 바꾸거나 되돌린다. 이전 상태는 `dismissed_from`에 남긴다
 
 | 응답 | 경우 |
 |---|---|
 | `200` + 바뀐 공고 (`GET /api/jobs`의 항목과 같은 형식) | 성공 |
 | `401` | 세션이 없거나 만료됨, 또는 `Origin`이 사이트 주소(`https://sehyeokkim.com`)가 아님 |
 | `404` | 없는 공고 (새로 만들지 않음) |
-| `409` | 지금 상태에서는 바꿀 수 없음: 지원 완료 · 마감 공고를 마감으로 표시, 마감이 아닌 공고를 취소 |
-| `422` | `status`가 `applied`가 아니거나, `applied_via`가 도메인 · `company` 형식이 아니거나, `closed`가 불리언이 아니거나, 다른 필드가 있음 |
+| `409` | 지금 상태에서는 바꿀 수 없음: 지원 완료 · 마감 · 관심없음 공고를 마감 · 관심없음으로 표시, 그 상태가 아닌 공고를 취소 |
+| `422` | `status`가 `applied`가 아니거나, `applied_via`가 도메인 · `company` 형식이 아니거나, `closed` · `dismissed`가 불리언이 아니거나, 다른 필드가 있음 |
 
 - 화면의 지원 경로 선택지는 그 공고 원문의 도메인 + `company` 두 개다. 사이트 목록을 코드에 두지 않는다.
-- 바꾸는 속성은 `status`, `applied_at`, `applied_via`, `closed_from`뿐이다. DynamoDB `UpdateItem`에 `attribute_exists(id)` 조건을 걸어 없는 공고는 만들지 않는다.
-- 마감 표시 · 취소는 현재 상태도 조건에 넣는다. 조건이 틀리면 `ReturnValuesOnConditionCheckFailure`로 받은 기존 항목 유무로 `404`와 `409`를 나눈다.
-- 화면은 `closed` 공고를 상태 필터에서 "마감"을 고를 때만 보여 준다. 적재 스크립트는 `applied`처럼 `closed`도 파일 내용으로 되돌리지 않는다.
+- 바꾸는 속성은 `status`, `applied_at`, `applied_via`, `closed_from`, `dismissed_from`뿐이다. DynamoDB `UpdateItem`에 `attribute_exists(id)` 조건을 걸어 없는 공고는 만들지 않는다.
+- 마감 · 관심없음 표시와 취소는 현재 상태도 조건에 넣는다. 조건이 틀리면 `ReturnValuesOnConditionCheckFailure`로 받은 기존 항목 유무로 `404`와 `409`를 나눈다.
+- 화면은 `closed` · `dismissed` 공고를 상태 필터에서 "마감" · "관심없음"을 고를 때만 보여 준다. 적재 스크립트는 `applied`처럼 `closed` · `dismissed`도 파일 내용으로 되돌리지 않는다.
 
 ## DynamoDB
 
