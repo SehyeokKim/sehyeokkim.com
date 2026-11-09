@@ -11,7 +11,6 @@
 - [아키텍처](#아키텍처)
 - [저장소 구조](#저장소-구조)
 - [배포 흐름](#배포-흐름)
-- [로컬에서 실행](#로컬에서-실행)
 - [기술 스택](#기술-스택)
 - [설계 결정 (ADR)](#설계-결정-adr)
 - [보안](#보안)
@@ -128,27 +127,6 @@ flowchart LR
 | CI (`ci.yml`, PR마다) | `terraform fmt` · `validate`, 웹 `lint` · `typecheck` · `build`, API `pytest`와 Lambda 패키지 빌드. AWS에는 접근하지 않음 |
 | 배포 (`deploy.yml`, `main`의 `web/` 변경) | OIDC로 임시 자격 증명을 받아 S3에 올리고 CloudFront 캐시를 비움. `_next/static`은 1년 캐시, HTML은 매번 새로 확인 |
 | 인프라 · Lambda 코드 | PR에서 plan을 확인한 뒤 사람이 로컬 SSO로 apply ([ADR 0006](docs/adr/0006-manual-infra-apply.md)) |
-
-## 로컬에서 실행
-
-웹 화면은 Node.js 24로 확인합니다.
-
-```bash
-cd web
-npm ci
-npm run dev
-```
-
-http://localhost:3000 에서 공개 이력서를 볼 수 있습니다. 로컬에서는 API를 띄우지 않으므로 로그인은 동작하지 않습니다.
-
-API 테스트는 Python 3.12로 실행합니다.
-
-```bash
-cd api
-python -m pip install -r requirements-dev.txt
-python -m pytest -q
-python scripts/build_lambda.py   # api/dist/lambda.zip 생성
-```
 
 ## 기술 스택
 
