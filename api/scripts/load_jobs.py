@@ -58,6 +58,13 @@ def main() -> int:
             break
         kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
+    # TTL이 이미 지난 공고는 넣어도 DynamoDB가 곧 지우므로, 넣지 않아야 매번 '새 공고'로 다시 잡히지 않는다
+    now = int(datetime.now(KST).timestamp())
+    expired = [j for j in jobs if expires_at(j) <= now]
+    jobs = [j for j in jobs if expires_at(j) > now]
+    if expired:
+        print(f"TTL 지난 공고 {len(expired)}건은 건너뜁니다: {', '.join(j.id for j in expired)}")
+
     new_items = {j.id: j.model_dump(mode="json", exclude_none=True) | {"expires_at": expires_at(j)} for j in jobs}
     # 화면에서 지원 완료 · 마감 · 관심없음으로 바꾼 공고는 파일 내용으로 상태를 되돌리지 않는다
     kept = ("status", "applied_at", "applied_via", "closed_from", "dismissed_from")
@@ -66,7 +73,9 @@ def main() -> int:
             item.update({k: current[i][k] for k in kept if k in current[i]})
     added = [i for i in new_items if i not in current]
     changed = [i for i in new_items if i in current and current[i] != new_items[i]]
-    removed = [i for i in current if i not in new_items] if args.prune else []
+    # 건너뛴 만료 공고는 TTL이 지우게 두고, 삭제 목록에 넣지 않는다
+    expired_ids = {j.id for j in expired}
+    removed = [i for i in current if i not in new_items and i not in expired_ids] if args.prune else []
 
     print(f"새 공고 {len(added)} · 변경 {len(changed)} · 삭제 {len(removed)} · 그대로 {len(new_items) - len(added) - len(changed)}")
     for label, keys in (("+", added), ("~", changed), ("-", removed)):
